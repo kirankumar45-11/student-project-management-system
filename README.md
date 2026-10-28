@@ -55,9 +55,9 @@ CREATE DATABASE IF NOT EXISTS spms_db
   CHARACTER SET utf8mb4 
   COLLATE utf8mb4_unicode_ci;
 
--- 2. Create Migration User (DDL privileges)
+-- 2. Create Migration User (Specific DDL and DML privileges)
 CREATE USER IF NOT EXISTS 'spms_migrator'@'localhost' IDENTIFIED BY '<MIGRATION_PASSWORD>';
-GRANT ALL PRIVILEGES ON spms_db.* TO 'spms_migrator'@'localhost';
+GRANT CREATE, ALTER, DROP, REFERENCES, INDEX, SELECT, INSERT, UPDATE, DELETE ON spms_db.* TO 'spms_migrator'@'localhost';
 
 -- 3. Create Runtime Application User (Least Privilege CRUD only)
 CREATE USER IF NOT EXISTS 'spms_app'@'localhost' IDENTIFIED BY '<APP_PASSWORD>';
@@ -130,7 +130,7 @@ SECRET_KEY=<PASTE_GENERATED_64_CHAR_HEX_KEY>
 SESSION_MAX_AGE_SECONDS=7200
 SESSION_COOKIE_SECURE=false
 SESSION_COOKIE_SAMESITE=lax
-LOGIN_RATE_LIMIT=60/minute
+LOGIN_RATE_LIMIT=10/minute
 
 UPLOAD_DIR=storage
 DUPLICATE_THRESHOLD=0.70
@@ -166,6 +166,11 @@ To cleanly purge leftover test data and re-apply schema from scratch:
 ```bash
 python scripts/reset_db.py
 ```
+
+> [!WARNING]
+> **Data Loss Warning**: `scripts/reset_db.py` completely drops all 17 database tables, permanently erasing **all data including the coordinator admin account**. After executing a database reset, you must re-seed accounts:
+> - For clean demonstration accounts: run `python scripts/seed_demo.py` (creates demo coordinator, supervisors, students, topics, and archive).
+> - For a fresh production deployment: run `python scripts/seed.py` (provisions the single initial admin account).
 
 ---
 
@@ -226,21 +231,10 @@ gunicorn app.main:app \
   --error-logfile -
 ```
 
-### Windows (Waitress or Uvicorn Service)
-
-**Option 1: Uvicorn Production Cluster**:
+### Windows (Uvicorn Production Service)
+FastAPI is an asynchronous ASGI framework. Run multi-worker Uvicorn directly:
 ```powershell
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
-```
-
-**Option 2: Waitress WSGI / ASGI Wrapper**:
-Install Waitress:
-```powershell
-pip install waitress
-```
-Run via Waitress:
-```powershell
-waitress-serve --host=127.0.0.1 --port=8000 app.main:app
 ```
 
 ---

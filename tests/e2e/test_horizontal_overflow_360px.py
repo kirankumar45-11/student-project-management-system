@@ -36,6 +36,42 @@ def check_overflow():
     sup_username = sup_u.username if sup_u else "prof_turing"
     stu_username = stu_u.username if stu_u else "1SP23CS001"
     arch_id = arch_t.id if arch_t else 1
+
+    # Fetch IDs for extended pages
+    from app.models.communication import ForumThread
+    from app.models.topic import TopicAssignment
+    from app.models.submission import Submission
+    from app.models.assessment import Assessment
+
+    th = db.query(ForumThread).first()
+    thread_id = th.id if th else 1
+
+    assign = db.query(TopicAssignment).filter(TopicAssignment.supervisor_id == sup_u.supervisor_profile.id).first() if sup_u and sup_u.supervisor_profile else None
+    assign_id = assign.id if assign else 1
+
+    # Ensure unfinalized assessment for coordinator finalization & supervisor grading
+    if assign:
+        if not assign.assessment:
+            assign.assessment = Assessment(
+                assignment_id=assign.id,
+                supervisor_id=assign.supervisor_id,
+                presentation_score=28.0,
+                report_score=28.0,
+                implementation_score=38.0,
+                total_score=94.0,
+                supervisor_remarks="Evaluation for responsive check"
+            )
+            db.commit()
+        else:
+            assign.assessment.finalized_at = None
+            db.commit()
+        assess_id = assign.assessment.id
+    else:
+        assess_id = 1
+
+    sub = assign.submissions[0] if assign and assign.submissions else db.query(Submission).first()
+    sub_id = sub.id if sub else 1
+
     db.close()
 
     print("=" * 70)
@@ -107,7 +143,11 @@ def check_overflow():
                 (f"/archive/{arch_id}", "Archive Detail Page"),
                 ("/guidelines", "Guidelines Index"),
                 ("/forum", "Department Forum"),
+                (f"/forum/{thread_id}", "Forum Thread View"),
                 ("/notifications", "Notifications Center"),
+                ("/profile/student", "Student Profile Page"),
+                ("/auth/change-password", "Change Password Page"),
+                (f"/messaging/{assign_id}", "Messaging Project Thread"),
             ])
 
             # 3. Supervisor Pages
@@ -115,6 +155,8 @@ def check_overflow():
                 ("/dashboard", "Supervisor Dashboard"),
                 ("/submissions/reviews", "Supervisor Reviews"),
                 ("/assessments", "Supervisor Assessments"),
+                (f"/submissions/{sub_id}/review", "Submission Review Page"),
+                (f"/assessments/{assign_id}/grade", "Supervisor Grading Form"),
             ])
 
             # 4. Coordinator Pages
@@ -125,6 +167,7 @@ def check_overflow():
                 ("/coordinator/topics", "Topic Approvals"),
                 ("/coordinator/deadlines", "Milestone Deadlines"),
                 ("/coordinator/assessments", "Finalization Grades"),
+                (f"/coordinator/assessments/{assess_id}/finalize", "Coordinator Finalization Form"),
             ])
 
         browser.close()

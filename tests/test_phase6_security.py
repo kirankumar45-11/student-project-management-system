@@ -114,7 +114,8 @@ def test_security_headers_present_on_all_responses():
     csp = headers.get("Content-Security-Policy")
     assert "default-src 'self'" in csp
     assert "frame-ancestors 'none'" in csp
-    assert "script-src 'self' https://cdn.jsdelivr.net 'nonce-" in csp
+    assert "script-src 'self' 'nonce-" in csp
+    assert "https://cdn.jsdelivr.net" not in csp, "CSP should not permit external CDN after vendoring"
     # Strict verification: script-src directive MUST NOT use 'unsafe-inline'
     script_directive = [d.strip() for d in csp.split(";") if d.strip().startswith("script-src")][0]
     assert "'unsafe-inline'" not in script_directive, "script-src must not permit 'unsafe-inline'!"

@@ -70,9 +70,9 @@ async def add_security_headers(request: Request, call_next):
     response.headers["X-XSS-Protection"] = "1; mode=block"
     csp = (
         "default-src 'self'; "
-        f"script-src 'self' https://cdn.jsdelivr.net 'nonce-{nonce}'; "
-        "style-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; "
-        "font-src 'self' https://cdn.jsdelivr.net; "
+        f"script-src 'self' 'nonce-{nonce}'; "
+        "style-src 'self' 'unsafe-inline'; "
+        "font-src 'self'; "
         "img-src 'self' data: https:; "
         "frame-ancestors 'none'; "
         "base-uri 'self'; "
@@ -108,7 +108,7 @@ async def forbidden_role_handler(request: Request, exc: ForbiddenRoleException):
         content=f"""
         <!DOCTYPE html>
         <html>
-        <head><title>403 Forbidden</title><link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css'></head>
+        <head><title>403 Forbidden</title><link rel='stylesheet' href='/static/vendor/bootstrap/css/bootstrap.min.css'></head>
         <body class='p-5 bg-light text-center'>
             <div class='card p-5 mx-auto shadow-sm' style='max-width: 500px;'>
                 <h1 class='text-danger'>403</h1>
