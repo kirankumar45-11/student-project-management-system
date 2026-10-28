@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}Topic Approvals & Assignments - Coordinator{% endblock %}
+
+{% block content %}
+<div class="container-fluid max-w-1200 mx-auto">
+  <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
+    <div>
+      <h3 class="fw-bold text-primary mb-1"><i class="bi bi-lightbulb me-2"></i>Topic Approvals</h3>
+      <p class="text-muted small mb-0">Review student-proposed project topics, assign faculty supervisors, and enforce slot capacity limits.</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="/coordinator/topic-requests" class="btn btn-outline-primary btn-sm fw-semibold">
+        <i class="bi bi-inbox me-1"></i>Topic Requests
+      </a>
+      <a href="/coordinator/supervisors" class="btn btn-outline-secondary btn-sm fw-semibold">
+        <i class="bi bi-person-badge me-1"></i>View Slot Capacities
+      </a>
+    </div>
+  </div>
+
+  <!-- Filter Pills -->
+  <div class="d-flex gap-2 mb-4 overflow-x-auto pb-2">
+    <a href="/coordinator/topics" class="btn btn-sm {% if not status_filter %}btn-primary{% else %}btn-outline-secondary{% endif %}">All Topics</a>
+    <a href="/coordinator/topics?status_filter=PROPOSED" class="btn btn-sm {% if status_filter == 'PROPOSED' %}btn-warning text-dark fw-bold{% else %}btn-outline-secondary{% endif %}">Pending Proposals</a>
+    <a href="/coordinator/topics?status_filter=AVAILABLE" class="btn btn-sm {% if status_filter == 'AVAILABLE' %}btn-success text-white fw-bold{% else %}btn-outline-secondary{% endif %}">Supervisor Available</a>
+    <a href="/coordinator/topics?status_filter=ASSIGNED" class="btn btn-sm {% if status_filter == 'ASSIGNED' %}btn-info text-white fw-bold{% else %}btn-outline-secondary{% endif %}">Assigned</a>
+    <a href="/coordinator/topics?status_filter=REJECTED" class="btn btn-sm {% if status_filter == 'REJECTED' %}btn-danger text-white fw-bold{% else %}btn-outline-secondary{% endif %}">Rejected</a>
+  </div>
+
+  {% if topics %}
+  <div class="row g-4">
+    {% for topic in topics %}
+    <div class="col-12 col-lg-6">
+      <div class="card h-100 shadow-sm border-0">
+        <div class="card-body p-4 d-flex flex-column">
+          <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+            <h5 class="fw-bold text-primary mb-0">{{ topic.title }}</h5>
+            <div>
+              {% if topic.status.value == 'PROPOSED' %}
+              <span class="badge bg-warning-subtle text-warning border border-warning">PROPOSED</span>
+              {% elif topic.status.value == 'AVAILABLE' %}
+              <span class="badge bg-success-subtle text-success border border-success">AVAILABLE</span>
+              {% elif topic.status.value == 'ASSIGNED' %}
+              <span class="badge bg-info-subtle text-info border border-info">ASSIGNED</span>
+              {% elif topic.status.value == 'REJECTED' %}
+              <span class="badge bg-danger-subtle text-danger border border-danger">REJECTED</span>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="small text-muted mb-3">
+            <span>Domain: <strong>{{ topic.domain }}</strong></span> | 
+            <span>Dept: <strong>{{ topic.department.code }}</strong></span> | 
+            <span>By: <strong>{{ topic.proposed_by_role.value }}</strong> ({{ topic.proposer.username }})</span>
+          </div>
+
+          <p class="text-secondary small flex-grow-1 mb-3">{{ topic.description }}</p>
+
+          {% if topic.rejection_remarks %}
+          <div class="alert alert-danger py-2 px-3 small mb-3">
+            <i class="bi bi-exclamation-circle me-1"></i><strong>Rejection Remarks:</strong> {{ topic.rejection_remarks }}
+          </div>
+          {% endif %}
+
+          {% if topic.status.value == 'PROPOSED' and topic.proposed_by_role.value == 'STUDENT' %}
+          <div class="d-flex justify-content-end gap-2 pt-3 border-top mt-auto">
+            <!-- Reject Topic Button -->
+            <button class="btn btn-outline-danger btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#rejectTopicModal{{ topic.id }}">
+              <i class="bi bi-x-circle me-1"></i>Reject
+            </button>
+            <!-- Approve & Assign Supervisor Button -->
+            <button class="btn btn-success btn-sm fw-semibold" type="button" data-bs-toggle="modal" data-bs-target="#assignModal{{ topic.id }}">
+              <i class="bi bi-check-circle me-1"></i>Approve & Assign
+            </button>
+          </div>
+
+          <!-- Assign Supervisor Modal -->
+          <div class="modal fade" id="assignModal{{ topic.id }}" tabindex="-1" aria-labelledby="assignLabel{{ topic.id }}" aria-hidden="true">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <form action="/coordinator/topics/{{ topic.id }}/approve" method="POST">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                  <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="assignLabel{{ topic.id }}">Approve Topic & Assign Supervisor</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  </div>
+                  <div class="modal-body">
+                    <p class="small text-muted mb-3">
+                      Select an eligible faculty supervisor for project <strong>{{ topic.title }}</strong>. Faculty with 0 remaining slots cannot be assigned.
+                    </p>
+                    <div class="mb-3">
+                      <label for="supervisor_id{{ topic.id }}" class="form-label small fw-semibold">Faculty Supervisor <span class="text-danger">*</span></label>
+                      <select class="form-select" id="supervisor_id{{ topic.id }}" name="supervisor_id" required>
+                        <option value="" disabled selected>Select Supervisor</option>
+                        {% for sup_info in supervisors %}
+                        <option value="{{ sup_info.supervisor.id }}" {% if sup_info.remaining_slots == 0 %}disabled{% endif %}>
+                          {{ sup_info.supervisor.full_name }} ({{ sup_info.supervisor.department.code }}) - [{{ sup_info.remaining_slots }} slots remaining of {{ sup_info.supervisor.max_slots }}]
+                        </option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success"><i class="bi bi-check2-circle me-1"></i>Confirm Assignment</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          <!-- Reject Topic Modal -->
+          <div class="modal fade" id="rejectTopicModal{{ topic.id }}" tabindex="-1" aria-labelledby="rejectTopicLabel{{ topic.id }}" aria-hidden="true">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <form action="/coordinator/topics/{{ topic.id }}/reject" method="POST">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                  <div class="modal-header">
+                    <h5 class="modal-title fw-bold text-danger" id="rejectTopicLabel{{ topic.id }}">Reject Topic Proposal</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  </div>
+                  <div class="modal-body">
+                    <p class="small text-muted mb-3">
+                      Provide constructive feedback for student {{ topic.proposer.username }}. They will be allowed to submit a new proposal.
+                    </p>
+                    <div class="mb-3">
+                      <label for="topicRemarks{{ topic.id }}" class="form-label small fw-semibold">Rejection Reason <span class="text-danger">*</span></label>
+                      <textarea class="form-control" id="topicRemarks{{ topic.id }}" name="remarks" rows="3" required placeholder="e.g. Scope is too broad, methodology lacks innovation..."></textarea>
+                    </div>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Confirm Rejection</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="card p-5 text-center shadow-sm border-0">
+    <div class="py-5">
+      <i class="bi bi-lightbulb-off text-muted display-3 d-block mb-3 opacity-50"></i>
+      <h4 class="fw-bold">No Topics Found</h4>
+      <p class="text-muted small mb-0">There are no topics matching the selected filter criteria.</p>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

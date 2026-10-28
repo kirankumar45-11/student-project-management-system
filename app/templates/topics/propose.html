@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Propose Project Topic - SPMS{% endblock %}
+
+{% block content %}
+<div class="container-fluid max-w-900 mx-auto">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h3 class="fw-bold text-primary mb-1"><i class="bi bi-lightbulb-fill me-2"></i>Propose Project Topic</h3>
+      <p class="text-muted small mb-0">Submit your original project proposal for coordinator review and supervisor assignment.</p>
+    </div>
+    <a href="/topics" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Back to Topics</a>
+  </div>
+
+  {% if success %}
+  <div class="alert alert-success d-flex align-items-center shadow-sm mb-4" role="alert">
+    <i class="bi bi-check-circle-fill me-2 fs-5"></i>
+    <div>
+      <strong>Proposal Submitted!</strong> {{ success }}
+      <div class="mt-2"><a href="/dashboard" class="btn btn-success btn-sm fw-semibold">Return to Dashboard</a></div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if error %}
+  <div class="alert alert-danger d-flex align-items-center shadow-sm mb-4" role="alert">
+    <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+    <div>
+      <strong>Duplicate Topic Rejected!</strong>
+      <div class="small mt-1">{{ error }}</div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="card p-4 shadow-sm border-0">
+    <form action="/topics/propose" method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+      <div class="mb-3">
+        <label for="title" class="form-label small fw-semibold">Proposed Project Title <span class="text-danger">*</span></label>
+        <input type="text" class="form-control" id="title" name="title" value="{{ form_data.title if form_data else '' }}" placeholder="e.g. Autonomous Drone Navigation with Deep Reinforcement Learning" required maxlength="255">
+        <div class="form-text small">Titles are automatically screened for similarity against active and archived project topics.</div>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-12 col-md-4">
+          <label for="domain" class="form-label small fw-semibold">Technical Domain <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" id="domain" name="domain" value="{{ form_data.domain if form_data else '' }}" placeholder="e.g. Artificial Intelligence, Cloud, IoT" required maxlength="64">
+        </div>
+        <div class="col-12 col-md-4">
+          <label for="department_id" class="form-label small fw-semibold">Department <span class="text-danger">*</span></label>
+          <select class="form-select" id="department_id" name="department_id" required>
+            {% for d in departments %}
+            <option value="{{ d.id }}" {% if student and student.department_id == d.id %}selected{% endif %}>{{ d.code }} - {{ d.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-12 col-md-4">
+          <label for="session_id" class="form-label small fw-semibold">Academic Session <span class="text-danger">*</span></label>
+          <select class="form-select" id="session_id" name="session_id" required>
+            {% for s in sessions %}
+            <option value="{{ s.id }}" {% if student and student.session_id == s.id %}selected{% endif %}>{{ s.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label for="description" class="form-label small fw-semibold">Problem Statement & Proposed Solution <span class="text-danger">*</span></label>
+        <textarea class="form-control" id="description" name="description" rows="5" placeholder="Detail the core challenge, objectives, methodologies, and expected outcomes..." required>{{ form_data.description if form_data else '' }}</textarea>
+      </div>
+
+      <div class="d-flex justify-content-end gap-2">
+        <a href="/topics" class="btn btn-outline-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary fw-semibold"><i class="bi bi-send me-1"></i>Submit Proposal</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

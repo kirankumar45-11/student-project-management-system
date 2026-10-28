@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Publish Project Topic - Supervisor{% endblock %}
+
+{% block content %}
+<div class="container-fluid max-w-900 mx-auto">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h3 class="fw-bold text-primary mb-1"><i class="bi bi-journal-plus me-2"></i>Publish Available Topic</h3>
+      <p class="text-muted small mb-0">Publish an available project topic open for student applications and guidance.</p>
+    </div>
+    <a href="/topics/published" class="btn btn-outline-secondary btn-sm"><i class="bi bi-list-check me-1"></i>My Published Topics</a>
+  </div>
+
+  {% if error %}
+  <div class="alert alert-danger d-flex align-items-center shadow-sm mb-4" role="alert">
+    <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+    <div>
+      <strong>Duplicate Topic Rejected!</strong>
+      <div class="small mt-1">{{ error }}</div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="card p-4 shadow-sm border-0">
+    <form action="/topics/publish" method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+      <div class="mb-3">
+        <label for="title" class="form-label small fw-semibold">Topic Title <span class="text-danger">*</span></label>
+        <input type="text" class="form-control" id="title" name="title" value="{{ form_data.title if form_data else '' }}" placeholder="e.g. Distributed Ledger Architecture for Healthcare Interoperability" required maxlength="255">
+        <div class="form-text small">Titles will undergo duplicate detection against existing active topics.</div>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-12 col-md-4">
+          <label for="domain" class="form-label small fw-semibold">Domain <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" id="domain" name="domain" value="{{ form_data.domain if form_data else '' }}" placeholder="e.g. Cybersecurity, Blockchain, Systems" required maxlength="64">
+        </div>
+        <div class="col-12 col-md-4">
+          <label for="department_id" class="form-label small fw-semibold">Department <span class="text-danger">*</span></label>
+          <select class="form-select" id="department_id" name="department_id" required>
+            {% for d in departments %}
+            <option value="{{ d.id }}" {% if supervisor and supervisor.department_id == d.id %}selected{% endif %}>{{ d.code }} - {{ d.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-12 col-md-4">
+          <label for="session_id" class="form-label small fw-semibold">Academic Session <span class="text-danger">*</span></label>
+          <select class="form-select" id="session_id" name="session_id" required>
+            {% for s in sessions %}
+            <option value="{{ s.id }}">{{ s.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label for="description" class="form-label small fw-semibold">Description, Scope & Prerequisites <span class="text-danger">*</span></label>
+        <textarea class="form-control" id="description" name="description" rows="5" placeholder="Specify background, objectives, required student prerequisites and tech stack..." required>{{ form_data.description if form_data else '' }}</textarea>
+      </div>
+
+      <div class="d-flex justify-content-end gap-2">
+        <a href="/topics/published" class="btn btn-outline-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary fw-semibold"><i class="bi bi-upload me-1"></i>Publish Topic</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

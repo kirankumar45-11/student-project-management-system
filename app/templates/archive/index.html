@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block title %}Project Archive{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+  <!-- Banner -->
+  <div class="card p-4 mb-4 border-0 bg-primary text-white shadow-sm">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+      <div>
+        <h3 class="fw-bold mb-1"><i class="bi bi-archive-fill me-2"></i>Final-Year Project Archive</h3>
+        <p class="mb-0 opacity-75 small">Browse officially completed, evaluated, and archived student project repositories and reports.</p>
+      </div>
+      <div>
+        <span class="badge bg-light text-primary fs-6 px-3 py-2">
+          <i class="bi bi-collection-play-fill me-1"></i>{{ total_count }} Projects Archived
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Download Rules & Academic Access Policy Notice -->
+  <div class="card p-3 mb-4 shadow-sm border-start border-4 border-info">
+    <div class="d-flex align-items-start gap-3">
+      <i class="bi bi-info-circle-fill text-info fs-4 mt-1"></i>
+      <div>
+        <h6 class="fw-bold mb-1">Archive Academic Access &amp; Privacy Policy</h6>
+        <ul class="mb-1 ps-3 small text-muted">
+          {% for rule in download_rules %}
+          <li>{{ rule }}</li>
+          {% endfor %}
+        </ul>
+        <span class="badge bg-info-subtle text-info border border-info-subtle small mt-1">
+          <i class="bi bi-shield-shaded me-1"></i>Student Personally Identifiable Information (USN, phone, email) is strictly excluded.
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter & Search Controls -->
+  <div class="card p-4 mb-4 shadow-sm">
+    <form method="GET" action="/archive" class="row g-3 align-items-end">
+      <!-- Keyword Query -->
+      <div class="col-12 col-md-5">
+        <label for="q" class="form-label small fw-semibold">Search Keywords</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-search"></i></span>
+          <input 
+            type="text" 
+            class="form-control" 
+            id="q" 
+            name="q" 
+            value="{{ q }}" 
+            placeholder="Search title, domain, or abstract keywords..."
+          >
+        </div>
+      </div>
+
+      <!-- Department Filter -->
+      <div class="col-6 col-md-3">
+        <label for="department_id" class="form-label small fw-semibold">Department</label>
+        <select class="form-select" id="department_id" name="department_id">
+          <option value="">All Departments</option>
+          {% for d in departments %}
+          <option value="{{ d.id }}" {% if selected_department_id == d.id %}selected{% endif %}>
+            {{ d.code }} - {{ d.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Academic Session Filter -->
+      <div class="col-6 col-md-2">
+        <label for="session_id" class="form-label small fw-semibold">Academic Year</label>
+        <select class="form-select" id="session_id" name="session_id">
+          <option value="">All Sessions</option>
+          {% for s in sessions %}
+          <option value="{{ s.id }}" {% if selected_session_id == s.id %}selected{% endif %}>
+            {{ s.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Buttons -->
+      <div class="col-12 col-md-2 d-flex gap-2">
+        <button type="submit" class="btn btn-primary w-100 fw-semibold">
+          <i class="bi bi-funnel me-1"></i>Filter
+        </button>
+        {% if q or selected_department_id or selected_session_id %}
+        <a href="/archive" class="btn btn-outline-secondary" title="Reset Filters">
+          <i class="bi bi-x-circle"></i>
+        </a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+
+  <!-- Archived Projects Grid -->
+  {% if project_cards %}
+  <div class="row g-4 mb-4">
+    {% for p in project_cards %}
+    <div class="col-12 col-md-6 col-lg-4">
+      <div class="card h-100 shadow-sm d-flex flex-column">
+        <div class="card-body d-flex flex-column">
+          <!-- Badges -->
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle small">
+              {{ p.domain }}
+            </span>
+            <span class="badge bg-success-subtle text-success border border-success-subtle small fw-bold">
+              Grade: {{ p.final_grade }}
+            </span>
+          </div>
+
+          <!-- Title -->
+          <h5 class="card-title fw-bold mb-2">
+            <a href="/archive/{{ p.topic_id }}" class="text-decoration-none text-primary">{{ p.title }}</a>
+          </h5>
+
+          <!-- Metadata -->
+          <div class="small text-muted mb-3">
+            <div><i class="bi bi-building me-1"></i>{{ p.department_code }} | {{ p.session_name }}</div>
+            <div><i class="bi bi-person-badge me-1"></i>Supervisor: <strong>{{ p.supervisor_name }}</strong></div>
+          </div>
+
+          <!-- Description snippet -->
+          <p class="card-text text-muted small flex-grow-1">
+            {{ p.description[:180] }}{% if p.description|length > 180 %}...{% endif %}
+          </p>
+
+          <!-- Links & Actions -->
+          <div class="pt-3 border-top mt-auto">
+            {% if p.github_url %}
+            <div class="mb-2">
+              <a href="{{ p.github_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-dark w-100 text-truncate">
+                <i class="bi bi-github me-1"></i>View Code Repository
+              </a>
+            </div>
+            {% endif %}
+
+            {% if p.has_final_report %}
+            <a href="/archive/{{ p.topic_id }}/download" class="btn btn-sm btn-outline-primary w-100">
+              <i class="bi bi-file-earmark-arrow-down me-1"></i>Download Final Report
+            </a>
+            {% else %}
+            <button class="btn btn-sm btn-outline-secondary w-100" disabled>
+              <i class="bi bi-file-earmark-x me-1"></i>Report Not Available
+            </button>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Pagination Controls -->
+  {% if total_pages > 1 %}
+  <nav aria-label="Archive pagination" class="d-flex justify-content-center">
+    <ul class="pagination">
+      <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+        <a class="page-link" href="/archive?page={{ page - 1 }}{% if q %}&q={{ q }}{% endif %}{% if selected_department_id %}&department_id={{ selected_department_id }}{% endif %}{% if selected_session_id %}&session_id={{ selected_session_id }}{% endif %}">Previous</a>
+      </li>
+      {% for p_num in range(1, total_pages + 1) %}
+      <li class="page-item {% if p_num == page %}active{% endif %}">
+        <a class="page-link" href="/archive?page={{ p_num }}{% if q %}&q={{ q }}{% endif %}{% if selected_department_id %}&department_id={{ selected_department_id }}{% endif %}{% if selected_session_id %}&session_id={{ selected_session_id }}{% endif %}">{{ p_num }}</a>
+      </li>
+      {% endfor %}
+      <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+        <a class="page-link" href="/archive?page={{ page + 1 }}{% if q %}&q={{ q }}{% endif %}{% if selected_department_id %}&department_id={{ selected_department_id }}{% endif %}{% if selected_session_id %}&session_id={{ selected_session_id }}{% endif %}">Next</a>
+      </li>
+    </ul>
+  </nav>
+  {% endif %}
+
+  {% else %}
+  <div class="card p-5 text-center shadow-sm">
+    <i class="bi bi-archive text-muted fs-1 mb-3 opacity-50"></i>
+    <h5 class="fw-bold">No Archived Projects Found</h5>
+    <p class="text-muted small mb-3">No completed project records match your current search and filter criteria.</p>
+    <div>
+      <a href="/archive" class="btn btn-outline-primary btn-sm">Clear Search &amp; Filters</a>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Chapter Deadlines - SPMS Coordinator{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+  <!-- Header Bar -->
+  <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
+    <div>
+      <h3 class="fw-bold mb-1"><i class="bi bi-clock-history text-primary me-2"></i>Chapter Deadlines</h3>
+      <p class="text-muted small mb-0">Set milestone deadlines, configure late submission permissions, and monitor countdowns per session.</p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <!-- Session Switcher -->
+      <form method="GET" action="/coordinator/deadlines" class="d-inline-block">
+        <select name="session_id" class="form-select form-select-sm" onchange="this.form.submit()">
+          {% for s in sessions %}
+          <option value="{{ s.id }}" {% if selected_session and selected_session.id == s.id %}selected{% endif %}>
+            {{ s.name }} {% if s.is_active %}(Active){% endif %}
+          </option>
+          {% endfor %}
+        </select>
+      </form>
+      <button class="btn btn-primary btn-sm d-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#deadlineModal">
+        <i class="bi bi-plus-lg"></i>
+        <span>Configure Deadline</span>
+      </button>
+    </div>
+  </div>
+
+  {% if not selected_session %}
+  <div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle me-2"></i>No academic session selected. Please create an academic session first.
+  </div>
+  {% else %}
+
+  <!-- Chapter Deadlines Grid -->
+  <div class="row g-3">
+    {% for cd in chapter_deadlines %}
+    <div class="col-12 col-md-6 col-xl-3">
+      <div class="card h-100 shadow-sm border-0 border-top border-4 {% if cd.deadline %}{% if cd.is_overdue %}border-danger{% else %}border-success{% endif %}{% else %}border-secondary{% endif %}">
+        <div class="card-body d-flex flex-column">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <span class="badge bg-primary-subtle text-primary border border-primary small">
+              Chapter {{ loop.index }}
+            </span>
+            {% if cd.deadline %}
+              {% if cd.is_overdue %}
+              <span class="badge bg-danger-subtle text-danger border border-danger">
+                <i class="bi bi-exclamation-octagon me-1"></i>Overdue
+              </span>
+              {% else %}
+              <span class="badge bg-success-subtle text-success border border-success">
+                <i class="bi bi-hourglass-split me-1"></i>Active
+              </span>
+              {% endif %}
+            {% else %}
+              <span class="badge bg-secondary-subtle text-secondary border">Unset</span>
+            {% endif %}
+          </div>
+
+          <h5 class="fw-bold mb-1">{{ cd.display_name }}</h5>
+
+          {% if cd.deadline %}
+          <div class="mb-3">
+            <div class="fw-semibold text-truncate mb-1" title="{{ cd.deadline.title }}">{{ cd.deadline.title }}</div>
+            {% if cd.deadline.description %}
+            <p class="text-muted small mb-2 text-truncate">{{ cd.deadline.description }}</p>
+            {% endif %}
+            <div class="small text-muted mb-1">
+              <i class="bi bi-calendar3 me-1"></i>{{ cd.deadline.due_date.strftime('%Y-%m-%d %H:%M') }}
+            </div>
+            <div class="small fw-semibold {% if cd.is_overdue %}text-danger{% else %}text-success{% endif %}">
+              <i class="bi bi-clock me-1"></i>{{ cd.remaining_str }}
+            </div>
+            <div class="mt-2">
+              {% if cd.deadline.allow_late %}
+              <span class="badge bg-info-subtle text-info border border-info small">
+                <i class="bi bi-check-circle me-1"></i>Late Submissions Allowed
+              </span>
+              {% else %}
+              <span class="badge bg-danger-subtle text-danger border border-danger small">
+                <i class="bi bi-x-circle me-1"></i>Late Submissions Blocked
+              </span>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="mt-auto d-flex gap-2 pt-2 border-top">
+            <button class="btn btn-outline-primary btn-sm flex-fill" data-bs-toggle="modal" data-bs-target="#deadlineModal"
+                    data-chapter="{{ cd.chapter.value }}"
+                    data-title="{{ cd.deadline.title }}"
+                    data-desc="{{ cd.deadline.description or '' }}"
+                    data-due="{{ cd.deadline.due_date.strftime('%Y-%m-%dT%H:%M') }}"
+                    data-late="{{ 'true' if cd.deadline.allow_late else 'false' }}">
+              <i class="bi bi-pencil me-1"></i>Edit
+            </button>
+            <form action="/coordinator/deadlines/{{ cd.deadline.id }}/delete" method="POST" onsubmit="return confirm('Delete this deadline?');" class="d-inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <button type="submit" class="btn btn-outline-danger btn-sm" title="Delete Deadline">
+                <i class="bi bi-trash"></i>
+              </button>
+            </form>
+          </div>
+
+          {% else %}
+          <p class="text-muted small mt-2 mb-3">No submission deadline has been configured for this chapter in this session.</p>
+          <div class="mt-auto pt-2 border-top">
+            <button class="btn btn-primary btn-sm w-100" data-bs-toggle="modal" data-bs-target="#deadlineModal" data-chapter="{{ cd.chapter.value }}">
+              <i class="bi bi-plus-lg me-1"></i>Set Deadline
+            </button>
+          </div>
+          {% endif %}
+
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% endif %}
+</div>
+
+<!-- Modal to Set/Edit Deadline -->
+<div class="modal fade" id="deadlineModal" tabindex="-1" aria-labelledby="deadlineModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow">
+      <form action="/coordinator/deadlines" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="session_id" value="{{ selected_session.id if selected_session else '' }}">
+        
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" id="deadlineModalLabel">
+            <i class="bi bi-calendar-plus text-primary me-2"></i>Configure Chapter Deadline
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Chapter</label>
+            <select name="chapter" id="modalChapter" class="form-select" required>
+              {% for k, v in CHAPTER_DISPLAY_NAMES.items() %}
+              <option value="{{ k.value }}">{{ v }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Title</label>
+            <input type="text" name="title" id="modalTitle" class="form-control" placeholder="e.g. Project Synopsis Final Submission" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Description / Submission Instructions</label>
+            <textarea name="description" id="modalDesc" class="form-control" rows="2" placeholder="Submission criteria, rubrics, formatting guidelines..."></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Due Date & Time</label>
+            <input type="datetime-local" name="due_date" id="modalDue" class="form-control" required>
+          </div>
+          <div class="form-check form-switch mb-2">
+            <input class="form-check-input" type="checkbox" role="switch" name="allow_late" id="modalAllowLate" value="true">
+            <label class="form-check-label small fw-semibold" for="modalAllowLate">
+              Allow Late Submissions (flagged with late penalty badge)
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm">Save Deadline</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="/static/js/deadlines.js" nonce="{{ request.state.csp_nonce }}"></script>
+{% endblock %}

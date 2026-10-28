@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}Coordinator Project Finalization{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+  <!-- Banner -->
+  <div class="card p-4 mb-4 border-0 bg-primary text-white shadow-sm">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+      <div>
+        <h3 class="fw-bold mb-1"><i class="bi bi-award-fill me-2"></i>Assessment Grading &amp; Finalization</h3>
+        <p class="mb-0 opacity-75 small">Review supervisor scores, assign final project grades, and transition completed projects to the archive.</p>
+      </div>
+      <div>
+        <span class="badge bg-light text-primary fs-6 px-3 py-2">
+          <i class="bi bi-shield-lock me-1"></i>Coordinator Authority
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Metric Stat Cards -->
+  <div class="row g-3 mb-4">
+    <div class="col-12 col-sm-4">
+      <div class="card p-3 shadow-sm h-100">
+        <span class="text-muted small d-block">Total Supervisor Assessed</span>
+        <h3 class="fw-bold text-primary mb-0">{{ total_assessed }}</h3>
+      </div>
+    </div>
+    <div class="col-12 col-sm-4">
+      <div class="card p-3 shadow-sm h-100 border-warning-subtle">
+        <span class="text-muted small d-block">Pending Coordinator Finalization</span>
+        <h3 class="fw-bold text-warning mb-0">{{ pending_finalization }}</h3>
+      </div>
+    </div>
+    <div class="col-12 col-sm-4">
+      <div class="card p-3 shadow-sm h-100 border-success-subtle">
+        <span class="text-muted small d-block">Finalized &amp; Archived</span>
+        <h3 class="fw-bold text-success mb-0">{{ finalized_count }}</h3>
+      </div>
+    </div>
+  </div>
+
+  <!-- Records Table Card -->
+  <div class="card p-4 shadow-sm">
+    <h5 class="fw-bold mb-3">All Project Evaluations</h5>
+
+    {% if records %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Student &amp; USN</th>
+            <th>Project Topic</th>
+            <th>Supervisor</th>
+            <th>Scores (P/R/I)</th>
+            <th>Total</th>
+            <th>Final Grade</th>
+            <th>Status</th>
+            <th class="text-end">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in records %}
+          <tr>
+            <td>
+              <div class="fw-bold">{{ r.assignment.student.full_name }}</div>
+              <div class="font-monospace small text-muted">{{ r.assignment.student.usn }}</div>
+            </td>
+            <td class="small" style="max-width: 220px;">
+              <span class="d-inline-block text-truncate" style="max-width: 220px;" title="{{ r.assignment.topic.title }}">
+                {{ r.assignment.topic.title }}
+              </span>
+            </td>
+            <td class="small">{{ r.assignment.supervisor.full_name }}</td>
+            <td>
+              {% if r.assessment %}
+              <span class="small font-monospace">{{ r.assessment.presentation_score }}/{{ r.assessment.report_score }}/{{ r.assessment.implementation_score }}</span>
+              {% else %}
+              <span class="text-muted small">&mdash;</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if r.assessment %}
+              <strong class="text-primary">{{ r.assessment.total_score }}</strong> / 100
+              {% else %}
+              <span class="text-muted small">&mdash;</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if r.assessment and r.assessment.coordinator_final_grade %}
+              <span class="badge bg-success fs-6 px-2 py-1">{{ r.assessment.coordinator_final_grade }}</span>
+              {% else %}
+              <span class="text-muted small">Not set</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if r.is_finalized %}
+              <span class="badge bg-success text-white">
+                <i class="bi bi-check2-all me-1"></i>Finalized
+              </span>
+              {% elif r.assessment %}
+              <span class="badge bg-warning-subtle text-warning border border-warning-subtle">
+                <i class="bi bi-exclamation-circle me-1"></i>Action Required
+              </span>
+              {% elif r.is_final_approved %}
+              <span class="badge bg-info-subtle text-info border border-info-subtle">
+                <i class="bi bi-hourglass-split me-1"></i>Awaiting Marks
+              </span>
+              {% else %}
+              <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">
+                <i class="bi bi-hourglass me-1"></i>Pipeline Active
+              </span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {% if r.assessment and not r.is_finalized %}
+              <a href="/coordinator/assessments/{{ r.assessment.id }}/finalize" class="btn btn-primary btn-sm">
+                <i class="bi bi-award me-1"></i>Finalize Grade
+              </a>
+              {% elif r.is_finalized %}
+              <a href="/coordinator/assessments/{{ r.assessment.id }}/finalize" class="btn btn-outline-secondary btn-sm" title="View finalized audit log">
+                <i class="bi bi-eye me-1"></i>View Details
+              </a>
+              {% else %}
+              <button class="btn btn-outline-secondary btn-sm" disabled>
+                Pending Marks
+              </button>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-journal-check fs-1 d-block mb-2 opacity-50"></i>
+      <h6 class="fw-bold">No Projects Ready for Evaluation</h6>
+      <p class="small mb-0">Projects will appear here once student submissions progress through the pipeline.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

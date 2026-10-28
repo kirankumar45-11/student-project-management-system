@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Resubmit Registration{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center my-3">
+  <div class="col-12 col-md-10 col-lg-8">
+    <div class="card p-4 shadow-sm border-warning">
+      <div class="border-bottom pb-3 mb-4">
+        <div class="badge bg-danger-subtle text-danger border border-danger mb-2">Registration Revision Requested</div>
+        <h4 class="fw-bold text-primary mb-1">
+          <i class="bi bi-pencil-square me-2"></i>Update & Resubmit Registration
+        </h4>
+        <p class="text-muted small mb-0">Your initial registration was reviewed by the department coordinator. Please correct the requested fields below and resubmit for approval.</p>
+      </div>
+
+      <!-- Coordinator Remarks Callout -->
+      <div class="alert alert-warning border-warning d-flex align-items-start mb-4" role="alert">
+        <i class="bi bi-chat-left-quote-fill me-3 fs-4 text-warning"></i>
+        <div>
+          <strong class="d-block mb-1">Coordinator Remarks:</strong>
+          <p class="mb-0 small text-break">{{ remarks or 'Please verify your details and resubmit.' }}</p>
+        </div>
+      </div>
+
+      {% if error %}
+      <div class="alert alert-danger d-flex align-items-center mb-4" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+        <div class="small">{{ error }}</div>
+      </div>
+      {% endif %}
+
+      <form action="/register/resubmit" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="resubmit_token" value="{{ resubmit_token }}">
+
+        <h6 class="text-secondary fw-bold text-uppercase small mb-3">Academic Details</h6>
+        <div class="row g-3 mb-4">
+          <div class="col-12 col-sm-6">
+            <label for="usn" class="form-label small fw-semibold">University Seat Number (USN) *</label>
+            <input type="text" class="form-control text-uppercase" id="usn" name="usn" required value="{{ student.usn }}">
+          </div>
+
+          <div class="col-12 col-sm-6">
+            <label for="full_name" class="form-label small fw-semibold">Full Name *</label>
+            <input type="text" class="form-control" id="full_name" name="full_name" required value="{{ student.full_name }}">
+          </div>
+
+          <div class="col-12 col-sm-6">
+            <label for="department_id" class="form-label small fw-semibold">Department *</label>
+            <select class="form-select" id="department_id" name="department_id" required>
+              {% for dept in departments %}
+              <option value="{{ dept.id }}" {% if student.department_id == dept.id %}selected{% endif %}>
+                {{ dept.code }} - {{ dept.name }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-12 col-sm-3">
+            <label for="session_id" class="form-label small fw-semibold">Academic Session *</label>
+            <select class="form-select" id="session_id" name="session_id" required>
+              {% for sess in sessions %}
+              <option value="{{ sess.id }}" {% if student.session_id == sess.id %}selected{% endif %}>
+                {{ sess.name }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-12 col-sm-3">
+            <label for="semester" class="form-label small fw-semibold">Semester *</label>
+            <select class="form-select" id="semester" name="semester" required>
+              <option value="7" {% if student.semester == 7 %}selected{% endif %}>7th Semester</option>
+              <option value="8" {% if student.semester == 8 %}selected{% endif %}>8th Semester</option>
+            </select>
+          </div>
+        </div>
+
+        <h6 class="text-secondary fw-bold text-uppercase small mb-3">Contact Information</h6>
+        <div class="row g-3 mb-4">
+          <div class="col-12 col-sm-6">
+            <label for="email" class="form-label small fw-semibold">Email Address *</label>
+            <input type="email" class="form-control" id="email" name="email" required value="{{ user.email }}">
+          </div>
+
+          <div class="col-12 col-sm-6">
+            <label for="phone" class="form-label small fw-semibold">Phone Number *</label>
+            <input type="tel" class="form-control" id="phone" name="phone" required value="{{ student.phone }}">
+          </div>
+        </div>
+
+        <h6 class="text-secondary fw-bold text-uppercase small mb-3">Optional Profile & Skills</h6>
+        <div class="row g-3 mb-4">
+          <div class="col-12 col-sm-6">
+            <label for="github_url" class="form-label small fw-semibold">GitHub Profile URL</label>
+            <input type="url" class="form-control" id="github_url" name="github_url" value="{{ student.github_url or '' }}">
+          </div>
+
+          <div class="col-12 col-sm-6">
+            <label for="linkedin_url" class="form-label small fw-semibold">LinkedIn Profile URL</label>
+            <input type="url" class="form-control" id="linkedin_url" name="linkedin_url" value="{{ student.linkedin_url or '' }}">
+          </div>
+
+          <div class="col-12">
+            <label for="skills" class="form-label small fw-semibold">Technical Skills</label>
+            <input type="text" class="form-control" id="skills" name="skills" value="{{ student.skills or '' }}">
+          </div>
+        </div>
+
+        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center gap-3 pt-3 border-top">
+          <a href="/auth/login" class="text-decoration-none small text-muted">
+            <i class="bi bi-arrow-left me-1"></i>Cancel and Return to Sign In
+          </a>
+          <button type="submit" class="btn btn-warning px-4 py-2 fw-semibold w-100 w-sm-auto">
+            <i class="bi bi-check-circle me-2"></i>Submit Corrected Registration
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

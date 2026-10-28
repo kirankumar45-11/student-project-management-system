@@ -1,0 +1,12 @@
+.env
+.admin_initial_secret
+.demo_credentials
+.venv/
+__pycache__/
+*.pyc
+storage/
+*.log
+.pytest_cache/
+.playwright/
+test-results/
+screenshots/

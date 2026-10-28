@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}Grade Student Assessment{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0" style="max-width: 800px;">
+  <!-- Breadcrumb -->
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/assessments">Assessments</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Score Student</li>
+    </ol>
+  </nav>
+
+  <!-- Student Project Summary Card -->
+  <div class="card p-4 mb-4 shadow-sm">
+    <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+      <div>
+        <h5 class="fw-bold mb-0 text-primary">{{ assignment.topic.title }}</h5>
+        <div class="text-muted small">Domain: {{ assignment.topic.domain }}</div>
+      </div>
+      <span class="badge bg-success-subtle text-success border border-success-subtle">
+        <i class="bi bi-check-circle-fill me-1"></i>Final Report Approved
+      </span>
+    </div>
+
+    <div class="row g-3 small">
+      <div class="col-12 col-sm-6">
+        <span class="text-muted d-block">Student:</span>
+        <strong class="fs-6">{{ assignment.student.full_name }}</strong> ({{ assignment.student.usn }})
+      </div>
+      <div class="col-12 col-sm-6">
+        <span class="text-muted d-block">Department & Session:</span>
+        <strong>{{ assignment.student.department.code }}</strong> | {{ assignment.session.name }}
+      </div>
+      <div class="col-12">
+        <span class="text-muted d-block">GitHub Repository:</span>
+        {% if assignment.github_url %}
+        <a href="{{ assignment.github_url }}" target="_blank" rel="noopener noreferrer" class="text-decoration-none">
+          <i class="bi bi-github me-1"></i>{{ assignment.github_url }}
+        </a>
+        {% else %}
+        <span class="text-muted fst-italic">No GitHub repository link provided</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Grading Form Card -->
+  <div class="card p-4 shadow-sm">
+    <h5 class="fw-bold mb-3"><i class="bi bi-pencil-square me-2 text-primary"></i>Assessment Scoring Criteria</h5>
+    <p class="text-muted small mb-4">
+      Enter marks within the authorized ranges below. Total score is computed and verified server-side.
+    </p>
+
+    <form method="POST" action="/assessments/{{ assignment.id }}/grade" id="assessmentForm">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+      <!-- Presentation Score (0-30) -->
+      <div class="mb-3">
+        <label for="presentation_score" class="form-label fw-semibold">
+          1. Presentation Score <span class="text-danger">*</span>
+          <span class="text-muted fw-normal small">(Max: 30 marks)</span>
+        </label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-easel2"></i></span>
+          <input 
+            type="number" 
+            class="form-control" 
+            id="presentation_score" 
+            name="presentation_score" 
+            min="0" 
+            max="30" 
+            step="0.5" 
+            value="{{ assessment.presentation_score if assessment else '0.0' }}" 
+            required
+          >
+          <span class="input-group-text">/ 30</span>
+        </div>
+        <div class="form-text">Evaluates slide delivery, clarity, methodology explanation, and Q&amp;A defense.</div>
+      </div>
+
+      <!-- Report Score (0-30) -->
+      <div class="mb-3">
+        <label for="report_score" class="form-label fw-semibold">
+          2. Report Quality Score <span class="text-danger">*</span>
+          <span class="text-muted fw-normal small">(Max: 30 marks)</span>
+        </label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-file-earmark-ruled"></i></span>
+          <input 
+            type="number" 
+            class="form-control" 
+            id="report_score" 
+            name="report_score" 
+            min="0" 
+            max="30" 
+            step="0.5" 
+            value="{{ assessment.report_score if assessment else '0.0' }}" 
+            required
+          >
+          <span class="input-group-text">/ 30</span>
+        </div>
+        <div class="form-text">Evaluates documentation rigor, SRS completeness, UML diagrams, and academic format.</div>
+      </div>
+
+      <!-- Implementation Score (0-40) -->
+      <div class="mb-4">
+        <label for="implementation_score" class="form-label fw-semibold">
+          3. Implementation &amp; Demo Score <span class="text-danger">*</span>
+          <span class="text-muted fw-normal small">(Max: 40 marks)</span>
+        </label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-code-square"></i></span>
+          <input 
+            type="number" 
+            class="form-control" 
+            id="implementation_score" 
+            name="implementation_score" 
+            min="0" 
+            max="40" 
+            step="0.5" 
+            value="{{ assessment.implementation_score if assessment else '0.0' }}" 
+            required
+          >
+          <span class="input-group-text">/ 40</span>
+        </div>
+        <div class="form-text">Evaluates working code demonstration, technical complexity, test results, and repository quality.</div>
+      </div>
+
+      <!-- Live Total Preview Box -->
+      <div class="alert alert-primary d-flex align-items-center justify-content-between p-3 mb-4 rounded-3">
+        <div>
+          <span class="fw-bold d-block">Computed Aggregate Score:</span>
+          <span class="small opacity-75">Calculated in real-time, verified by server.</span>
+        </div>
+        <div class="text-end">
+          <span class="fs-3 fw-bold text-primary" id="totalPreview">0.0</span>
+          <span class="fs-6 text-muted">/ 100</span>
+        </div>
+      </div>
+
+      <!-- Supervisor Remarks -->
+      <div class="mb-4">
+        <label for="supervisor_remarks" class="form-label fw-semibold">Supervisor Feedback &amp; Remarks</label>
+        <textarea 
+          class="form-control" 
+          id="supervisor_remarks" 
+          name="supervisor_remarks" 
+          rows="4" 
+          placeholder="Provide comprehensive qualitative comments on the project demonstration, strengths, and areas of recommendation for the Coordinator's review..."
+        >{{ assessment.supervisor_remarks if assessment and assessment.supervisor_remarks else '' }}</textarea>
+      </div>
+
+      <!-- Actions -->
+      <div class="d-flex flex-column flex-sm-row justify-content-end gap-2 pt-2">
+        <a href="/assessments" class="btn btn-outline-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary px-4 fw-semibold">
+          <i class="bi bi-check2-circle me-1"></i>Save &amp; Submit Assessment
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="/static/js/assessments.js" nonce="{{ request.state.csp_nonce }}"></script>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}My Topic Requests - Student{% endblock %}
+
+{% block content %}
+<div class="container-fluid max-w-1000 mx-auto">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h3 class="fw-bold text-primary mb-1"><i class="bi bi-clock-history me-2"></i>My Topic Applications</h3>
+      <p class="text-muted small mb-0">Track the review status of your applications for supervisor-published topics.</p>
+    </div>
+    <a href="/topics" class="btn btn-outline-primary btn-sm"><i class="bi bi-compass me-1"></i>Explore More Topics</a>
+  </div>
+
+  {% if requests %}
+  <div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th scope="col">Topic Title</th>
+              <th scope="col">Domain</th>
+              <th scope="col">Submitted</th>
+              <th scope="col" class="text-center">Status</th>
+              <th scope="col">Coordinator Remarks</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for req in requests %}
+            <tr>
+              <td class="fw-bold text-primary">{{ req.topic.title }}</td>
+              <td><span class="badge bg-secondary-subtle text-secondary">{{ req.topic.domain }}</span></td>
+              <td class="small text-muted">{{ req.created_at.strftime('%b %d, %Y') if req.created_at else '' }}</td>
+              <td class="text-center">
+                {% if req.status.value == 'PENDING' %}
+                <span class="badge bg-warning-subtle text-warning border border-warning">Pending Review</span>
+                {% elif req.status.value == 'APPROVED' %}
+                <span class="badge bg-success-subtle text-success border border-success"><i class="bi bi-check-circle-fill me-1"></i>Approved & Assigned</span>
+                {% elif req.status.value == 'REJECTED' %}
+                <span class="badge bg-danger-subtle text-danger border border-danger">Rejected</span>
+                {% elif req.status.value == 'CANCELLED' %}
+                <span class="badge bg-secondary-subtle text-secondary">Closed (Assigned Elsewhere)</span>
+                {% endif %}
+              </td>
+              <td class="small text-muted">
+                {{ req.coordinator_remarks or '-' }}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="card p-5 text-center shadow-sm border-0">
+    <div class="py-5">
+      <i class="bi bi-inbox text-muted display-3 d-block mb-3 opacity-50"></i>
+      <h4 class="fw-bold">No Active Requests</h4>
+      <p class="text-muted small mb-3">You haven't requested any project topics yet.</p>
+      <div><a href="/topics" class="btn btn-primary btn-sm"><i class="bi bi-compass me-1"></i>Browse Available Topics</a></div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

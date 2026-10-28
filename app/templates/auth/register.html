@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}Student Registration{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center my-3">
+  <div class="col-12 col-md-10 col-lg-8">
+    <div class="card p-4 shadow-sm">
+      <div class="border-bottom pb-3 mb-4">
+        <h4 class="fw-bold text-primary mb-1">
+          <i class="bi bi-person-plus-fill me-2"></i>Student Registration
+        </h4>
+        <p class="text-muted small mb-0">Create your account for the Final-Year Project Management System. Account will be reviewed by the department coordinator.</p>
+      </div>
+
+      {% if error %}
+      <div class="alert alert-danger d-flex align-items-center mb-4" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+        <div class="small">{{ error }}</div>
+      </div>
+      {% endif %}
+
+      <form action="/auth/register" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+        <h6 class="text-secondary fw-bold text-uppercase small mb-3">Academic Details</h6>
+        <div class="row g-3 mb-4">
+          <div class="col-12 col-sm-6">
+            <label for="usn" class="form-label small fw-semibold">University Seat Number (USN) *</label>
+            <input type="text" class="form-control text-uppercase" id="usn" name="usn" placeholder="e.g. 1MS21CS001" required value="{{ form_data.usn if form_data else '' }}">
+            <div class="form-text small">This will be your permanent login identifier.</div>
+          </div>
+
+          <div class="col-12 col-sm-6">
+            <label for="full_name" class="form-label small fw-semibold">Full Name *</label>
+            <input type="text" class="form-control" id="full_name" name="full_name" placeholder="Full name as in university records" required value="{{ form_data.full_name if form_data else '' }}">
+          </div>
+
+          <div class="col-12 col-sm-6">
+            <label for="department_id" class="form-label small fw-semibold">Department *</label>
+            <select class="form-select" id="department_id" name="department_id" required>
+              <option value="" disabled selected>Select Department</option>
+              {% for dept in departments %}
+              <option value="{{ dept.id }}" {% if form_data and form_data.department_id|string == dept.id|string %}selected{% endif %}>
+                {{ dept.code }} - {{ dept.name }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-12 col-sm-3">
+            <label for="session_id" class="form-label small fw-semibold">Academic Session *</label>
+            <select class="form-select" id="session_id" name="session_id" required>
+              {% for sess in sessions %}
+              <option value="{{ sess.id }}" {% if sess.is_active %}selected{% endif %}>
+                {{ sess.name }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-12 col-sm-3">
+            <label for="semester" class="form-label small fw-semibold">Semester *</label>
+            <select class="form-select" id="semester" name="semester" required>
+              <option value="7" {% if form_data and form_data.semester == 7 %}selected{% endif %}>7th Semester</option>
+              <option value="8" {% if not form_data or form_data.semester == 8 %}selected{% endif %}>8th Semester</option>
+            </select>
+          </div>
+        </div>
+
+        <h6 class="text-secondary fw-bold text-uppercase small mb-3">Contact & Authentication</h6>
+        <div class="row g-3 mb-4">
+          <div class="col-12 col-sm-6">
+            <label for="email" class="form-label small fw-semibold">Email Address *</label>
+            <input type="email" class="form-control" id="email" name="email" placeholder="student@university.edu" required value="{{ form_data.email if form_data else '' }}">
+          </div>
+
+          <div class="col-12 col-sm-6">
+            <label for="phone" class="form-label small fw-semibold">Phone Number *</label>
+            <input type="tel" class="form-control" id="phone" name="phone" placeholder="e.g. +91 9876543210" required value="{{ form_data.phone if form_data else '' }}">
+          </div>
+
+          <div class="col-12">
+            <label for="password" class="form-label small fw-semibold">Password *</label>
+            <div class="input-group">
+              <input type="password" class="form-control" id="password" name="password" placeholder="Minimum 8 characters" minlength="8" required>
+              <button class="btn btn-outline-secondary password-toggle-btn" type="button" data-target="password">
+                <i class="bi bi-eye"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <h6 class="text-secondary fw-bold text-uppercase small mb-3">Profile Details (Optional)</h6>
+        <div class="row g-3 mb-4">
+          <div class="col-12 col-sm-6">
+            <label for="github_url" class="form-label small fw-semibold">GitHub Profile URL</label>
+            <input type="url" class="form-control" id="github_url" name="github_url" placeholder="https://github.com/username" value="{{ form_data.github_url if form_data else '' }}">
+          </div>
+
+          <div class="col-12 col-sm-6">
+            <label for="linkedin_url" class="form-label small fw-semibold">LinkedIn Profile URL</label>
+            <input type="url" class="form-control" id="linkedin_url" name="linkedin_url" placeholder="https://linkedin.com/in/username" value="{{ form_data.linkedin_url if form_data else '' }}">
+          </div>
+
+          <div class="col-12">
+            <label for="skills" class="form-label small fw-semibold">Technical Skills</label>
+            <input type="text" class="form-control" id="skills" name="skills" placeholder="e.g. Python, FastAPI, React, Machine Learning, MySQL" value="{{ form_data.skills if form_data else '' }}">
+          </div>
+
+          <div class="col-12">
+            <div class="form-check form-switch p-3 bg-body-tertiary rounded-3 border">
+              <input class="form-check-input ms-0 me-3" type="checkbox" id="show_contact_to_students" name="show_contact_to_students" value="true" {% if form_data and form_data.show_contact_to_students %}checked{% endif %}>
+              <label class="form-check-label small" for="show_contact_to_students">
+                <strong>Allow peer students to view my contact details (email/phone)</strong><br>
+                <span class="text-muted">Supervisors and the department coordinator will always have access to your contact information.</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center gap-3 pt-3 border-top">
+          <a href="/auth/login" class="text-decoration-none small text-muted">
+            <i class="bi bi-arrow-left me-1"></i>Already registered? Sign In
+          </a>
+          <button type="submit" class="btn btn-primary px-4 py-2 fw-semibold w-100 w-sm-auto">
+            <i class="bi bi-send-check me-2"></i>Submit Registration
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

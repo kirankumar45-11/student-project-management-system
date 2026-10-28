@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Supervisors & Slots - Coordinator{% endblock %}
+
+{% block content %}
+<div class="container-fluid max-w-1200 mx-auto">
+  <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
+    <div>
+      <h3 class="fw-bold text-primary mb-1"><i class="bi bi-person-badge me-2"></i>Supervisors & Slots</h3>
+      <p class="text-muted small mb-0">Provision faculty supervisor accounts, configure project slot quotas, and monitor capacity.</p>
+    </div>
+    <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#newSupForm" aria-expanded="false" aria-controls="newSupForm">
+      <i class="bi bi-person-plus me-1"></i>New Supervisor
+    </button>
+  </div>
+
+  <!-- One-Time Credentials Alert -->
+  {% if one_time_creds %}
+  <div class="alert alert-success alert-dismissible fade show shadow-sm border-success mb-4" role="alert">
+    <h5 class="alert-heading fw-bold"><i class="bi bi-key-fill me-2"></i>Supervisor Account Created!</h5>
+    <p class="mb-2">Please share these temporary credentials securely with the faculty member. They will be required to change their password upon first login.</p>
+    <div class="p-3 bg-body-tertiary rounded border font-monospace small">
+      <div><strong>Username:</strong> {{ one_time_creds.username }}</div>
+      <div><strong>Email:</strong> {{ one_time_creds.email }}</div>
+      <div><strong>Temporary Password:</strong> <span class="badge bg-dark text-warning fs-6 user-select-all">{{ one_time_creds.temp_password }}</span></div>
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+  {% endif %}
+
+  <!-- Create Supervisor Form -->
+  <div class="collapse mb-4" id="newSupForm">
+    <div class="card p-4 shadow-sm border-primary">
+      <h5 class="fw-bold mb-3"><i class="bi bi-person-plus-fill me-2 text-primary"></i>Provision Supervisor Account</h5>
+      <form action="/coordinator/supervisors" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div class="row g-3">
+          <div class="col-12 col-md-6">
+            <label for="full_name" class="form-label small fw-semibold">Full Name <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="full_name" name="full_name" placeholder="e.g. Dr. Jane Smith" required maxlength="128">
+          </div>
+          <div class="col-12 col-md-6">
+            <label for="email" class="form-label small fw-semibold">Institutional Email <span class="text-danger">*</span></label>
+            <input type="email" class="form-control" id="email" name="email" placeholder="e.g. jsmith@university.edu" required maxlength="255">
+          </div>
+          <div class="col-12 col-md-4">
+            <label for="department_id" class="form-label small fw-semibold">Department <span class="text-danger">*</span></label>
+            <select class="form-select" id="department_id" name="department_id" required>
+              <option value="" disabled selected>Select Department</option>
+              {% for d in departments %}
+              <option value="{{ d.id }}">{{ d.code }} - {{ d.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-12 col-md-4">
+            <label for="designation" class="form-label small fw-semibold">Designation <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="designation" name="designation" placeholder="e.g. Associate Professor" required maxlength="64">
+          </div>
+          <div class="col-12 col-md-4">
+            <label for="max_slots" class="form-label small fw-semibold">Project Slot Quota <span class="text-danger">*</span></label>
+            <input type="number" class="form-control" id="max_slots" name="max_slots" value="4" min="1" max="20" required>
+          </div>
+          <div class="col-12 text-end">
+            <button type="button" class="btn btn-outline-secondary me-2" data-bs-toggle="collapse" data-bs-target="#newSupForm">Cancel</button>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-person-check me-1"></i>Create Supervisor</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Supervisors Table -->
+  <div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th scope="col">Supervisor</th>
+              <th scope="col">Department</th>
+              <th scope="col">Designation</th>
+              <th scope="col" class="text-center">Assigned / Quota</th>
+              <th scope="col" class="text-center">Remaining Slots</th>
+              <th scope="col" class="text-end">Update Quota</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in supervisors %}
+            <tr>
+              <td>
+                <div class="fw-bold">{{ item.supervisor.full_name }}</div>
+                <div class="text-muted small">{{ item.supervisor.user.email }}</div>
+              </td>
+              <td><span class="badge bg-secondary-subtle text-secondary">{{ item.supervisor.department.code }}</span></td>
+              <td>{{ item.supervisor.designation }}</td>
+              <td class="text-center">
+                <span class="fw-bold">{{ item.active_count }}</span> / {{ item.supervisor.max_slots }}
+              </td>
+              <td class="text-center">
+                {% if item.available_slots == 0 %}
+                <span class="badge bg-danger-subtle text-danger border border-danger">Full Capacity</span>
+                {% elif item.available_slots <= 2 %}
+                <span class="badge bg-warning-subtle text-warning border border-warning">{{ item.available_slots }} left</span>
+                {% else %}
+                <span class="badge bg-success-subtle text-success border border-success">{{ item.available_slots }} available</span>
+                {% endif %}
+              </td>
+              <td class="text-end">
+                <form action="/coordinator/supervisors/{{ item.supervisor.id }}/slots" method="POST" class="d-inline-flex align-items-center gap-1 justify-content-end">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                  <input type="number" name="max_slots" value="{{ item.supervisor.max_slots }}" min="1" max="20" class="form-control form-control-sm text-center" style="width: 70px;">
+                  <button type="submit" class="btn btn-outline-primary btn-sm" title="Save Quota"><i class="bi bi-check"></i></button>
+                </form>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="6" class="p-5 text-center text-muted">
+                <i class="bi bi-person-x fs-1 d-block mb-2 opacity-50"></i>
+                No supervisors enrolled yet.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

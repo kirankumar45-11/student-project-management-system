@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Academic Sessions - Coordinator{% endblock %}
+
+{% block content %}
+<div class="container-fluid max-w-1200 mx-auto">
+  <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
+    <div>
+      <h3 class="fw-bold text-primary mb-1"><i class="bi bi-calendar-event me-2"></i>Academic Sessions</h3>
+      <p class="text-muted small mb-0">Manage academic years, project terms, and activate the current running cycle.</p>
+    </div>
+    <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#newSessionForm" aria-expanded="false" aria-controls="newSessionForm">
+      <i class="bi bi-plus-lg me-1"></i>New Academic Session
+    </button>
+  </div>
+
+  <!-- Create Session Form -->
+  <div class="collapse mb-4" id="newSessionForm">
+    <div class="card p-4 shadow-sm border-primary">
+      <h5 class="fw-bold mb-3"><i class="bi bi-calendar-plus me-2 text-primary"></i>Create Academic Session</h5>
+      <form action="/coordinator/sessions" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div class="row g-3">
+          <div class="col-12 col-md-4">
+            <label for="name" class="form-label small fw-semibold">Session Name <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="name" name="name" placeholder="e.g. 2026-2027" required maxlength="32">
+          </div>
+          <div class="col-12 col-md-4">
+            <label for="start_date" class="form-label small fw-semibold">Start Date <span class="text-danger">*</span></label>
+            <input type="date" class="form-control" id="start_date" name="start_date" required>
+          </div>
+          <div class="col-12 col-md-4">
+            <label for="end_date" class="form-label small fw-semibold">End Date <span class="text-danger">*</span></label>
+            <input type="date" class="form-control" id="end_date" name="end_date" required>
+          </div>
+          <div class="col-12">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="is_active" name="is_active" value="true">
+              <label class="form-check-label small" for="is_active">Make this the currently Active Session (deactivates others)</label>
+            </div>
+          </div>
+          <div class="col-12 text-end">
+            <button type="button" class="btn btn-outline-secondary me-2" data-bs-toggle="collapse" data-bs-target="#newSessionForm">Cancel</button>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i>Create Session</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Sessions List -->
+  <div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th scope="col">Session</th>
+              <th scope="col">Duration</th>
+              <th scope="col" class="text-center">Status</th>
+              <th scope="col" class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for sess in sessions %}
+            <tr>
+              <td class="fw-bold">{{ sess.name }}</td>
+              <td class="small text-muted">{{ sess.start_date }} to {{ sess.end_date }}</td>
+              <td class="text-center">
+                {% if sess.is_active %}
+                <span class="badge bg-success-subtle text-success border border-success"><i class="bi bi-check-circle-fill me-1"></i>Active Cycle</span>
+                {% else %}
+                <span class="badge bg-secondary-subtle text-secondary">Inactive</span>
+                {% endif %}
+              </td>
+              <td class="text-end">
+                {% if not sess.is_active %}
+                <form action="/coordinator/sessions/{{ sess.id }}/toggle" method="POST" class="d-inline">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                  <button type="submit" class="btn btn-outline-success btn-sm fw-semibold">
+                    <i class="bi bi-power me-1"></i>Activate
+                  </button>
+                </form>
+                {% else %}
+                <span class="text-muted small italic">Current</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="4" class="p-5 text-center text-muted">
+                <i class="bi bi-calendar-x fs-1 d-block mb-2 opacity-50"></i>
+                No academic sessions configured yet.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

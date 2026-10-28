@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}My Student Profile{% endblock %}
+
+{% block content %}
+<div class="container-fluid max-w-900 mx-auto">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h3 class="fw-bold text-primary mb-1">
+        <i class="bi bi-person-badge-fill me-2"></i>Student Profile
+      </h3>
+      <p class="text-muted small mb-0">View and update your academic and contact details.</p>
+    </div>
+    <span class="badge bg-success-subtle text-success border border-success px-3 py-2">
+      <i class="bi bi-check-circle-fill me-1"></i>Active Student
+    </span>
+  </div>
+
+  {% if success %}
+  <div class="alert alert-success d-flex align-items-center mb-4" role="alert">
+    <i class="bi bi-check-circle-fill me-2 fs-5"></i>
+    <div>{{ success }}</div>
+  </div>
+  {% endif %}
+
+  {% if error %}
+  <div class="alert alert-danger d-flex align-items-center mb-4" role="alert">
+    <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+    <div>{{ error }}</div>
+  </div>
+  {% endif %}
+
+  <div class="card p-4 shadow-sm mb-4">
+    <form action="/profile/student" method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+      <div class="d-flex align-items-center gap-3 pb-3 mb-4 border-bottom">
+        <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 64px; height: 64px; font-size: 28px;">
+          <i class="bi bi-person-fill"></i>
+        </div>
+        <div>
+          <h5 class="fw-bold mb-1">{{ student.full_name }}</h5>
+          <span class="badge bg-secondary-subtle text-secondary me-2">USN: {{ student.usn }}</span>
+          <span class="badge bg-info-subtle text-info">{{ student.department.code }}</span>
+        </div>
+      </div>
+
+      <h6 class="text-secondary fw-bold text-uppercase small mb-3">Locked Academic Credentials</h6>
+      <div class="row g-3 mb-4">
+        <div class="col-12 col-sm-6">
+          <label class="form-label small fw-semibold">University Seat Number (USN)</label>
+          <input type="text" class="form-control bg-body-tertiary" value="{{ student.usn }}" readonly disabled>
+          <div class="form-text small">USN is permanent and cannot be modified.</div>
+        </div>
+
+        <div class="col-12 col-sm-6">
+          <label class="form-label small fw-semibold">Department</label>
+          <input type="text" class="form-control bg-body-tertiary" value="{{ student.department.name }} ({{ student.department.code }})" readonly disabled>
+        </div>
+
+        <div class="col-12 col-sm-6">
+          <label class="form-label small fw-semibold">Academic Session</label>
+          <input type="text" class="form-control bg-body-tertiary" value="{{ student.session.name }}" readonly disabled>
+        </div>
+
+        <div class="col-12 col-sm-6">
+          <label class="form-label small fw-semibold">Semester</label>
+          <input type="text" class="form-control bg-body-tertiary" value="{{ student.semester }}th Semester" readonly disabled>
+        </div>
+      </div>
+
+      <h6 class="text-secondary fw-bold text-uppercase small mb-3">Editable Contact & Social Information</h6>
+      <div class="row g-3 mb-4">
+        <div class="col-12 col-sm-6">
+          <label for="email" class="form-label small fw-semibold">Email Address *</label>
+          <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}" required>
+        </div>
+
+        <div class="col-12 col-sm-6">
+          <label for="phone" class="form-label small fw-semibold">Phone Number *</label>
+          <input type="tel" class="form-control" id="phone" name="phone" value="{{ student.phone }}" required>
+        </div>
+
+        <div class="col-12 col-sm-6">
+          <label for="github_url" class="form-label small fw-semibold">GitHub Profile URL</label>
+          <input type="url" class="form-control" id="github_url" name="github_url" value="{{ student.github_url or '' }}" placeholder="https://github.com/username">
+        </div>
+
+        <div class="col-12 col-sm-6">
+          <label for="linkedin_url" class="form-label small fw-semibold">LinkedIn Profile URL</label>
+          <input type="url" class="form-control" id="linkedin_url" name="linkedin_url" value="{{ student.linkedin_url or '' }}" placeholder="https://linkedin.com/in/username">
+        </div>
+
+        <div class="col-12">
+          <label for="skills" class="form-label small fw-semibold">Technical Skills</label>
+          <input type="text" class="form-control" id="skills" name="skills" value="{{ student.skills or '' }}" placeholder="Python, FastAPI, Docker, etc.">
+        </div>
+
+        <div class="col-12">
+          <div class="form-check form-switch p-3 bg-body-tertiary rounded-3 border">
+            <input class="form-check-input ms-0 me-3" type="checkbox" id="show_contact_to_students" name="show_contact_to_students" value="true" {% if student.show_contact_to_students %}checked{% endif %}>
+            <label class="form-check-label small" for="show_contact_to_students">
+              <strong>Show contact details (email & phone) to peer students</strong><br>
+              <span class="text-muted">When unchecked, other students cannot see your phone or email. Department supervisors and coordinators always have access.</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+        <button type="submit" class="btn btn-primary px-4">
+          <i class="bi bi-save me-2"></i>Save Changes
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

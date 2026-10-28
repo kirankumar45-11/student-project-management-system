@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+
+{% block title %}Supervisor Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+  <!-- Header Banner -->
+  <div class="card p-4 mb-4 border-0 bg-primary text-white shadow-sm">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+      <div>
+        <h3 class="fw-bold mb-1"><i class="bi bi-person-workspace me-2"></i>Supervisor Workspace</h3>
+        <p class="mb-0 opacity-75 small">Department of {{ supervisor.department.name if supervisor and supervisor.department else 'Engineering' }} &bull; {{ supervisor.full_name }} ({{ supervisor.designation }})</p>
+      </div>
+      <div>
+        <span class="badge bg-light text-primary fs-6 px-3 py-2">
+          <i class="bi bi-pie-chart-fill me-1"></i>Slots: {{ assigned_count }} / {{ max_slots }} Allocated
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Metric Stat Cards & Slot Gauge -->
+  <div class="row g-3 mb-4">
+    <!-- Stat 1: Assigned Students -->
+    <div class="col-12 col-sm-6 col-lg-3">
+      <div class="card p-3 shadow-sm h-100">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="text-muted small">Assigned Students</span>
+          <span class="p-2 bg-primary-subtle text-primary rounded-circle"><i class="bi bi-people-fill"></i></span>
+        </div>
+        <h3 class="fw-bold mb-0 text-primary">{{ assigned_count }}</h3>
+        <span class="text-muted small mt-2 d-block">Active student projects</span>
+      </div>
+    </div>
+
+    <!-- Stat 2: Pending Reviews -->
+    <div class="col-12 col-sm-6 col-lg-3">
+      <div class="card p-3 shadow-sm h-100 {% if pending_reviews_count > 0 %}border-warning-subtle{% endif %}">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="text-muted small">Pending Reviews</span>
+          <span class="p-2 bg-warning-subtle text-warning rounded-circle"><i class="bi bi-clock-history"></i></span>
+        </div>
+        <h3 class="fw-bold mb-0 text-warning">{{ pending_reviews_count }}</h3>
+        <a href="/submissions/reviews" class="small text-decoration-none mt-2 d-inline-block">Review submissions &rarr;</a>
+      </div>
+    </div>
+
+    <!-- Stat 3: Pending Assessments -->
+    <div class="col-12 col-sm-6 col-lg-3">
+      <div class="card p-3 shadow-sm h-100 {% if pending_assessments_count > 0 %}border-info-subtle{% endif %}">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="text-muted small">Pending Assessments</span>
+          <span class="p-2 bg-info-subtle text-info rounded-circle"><i class="bi bi-award"></i></span>
+        </div>
+        <h3 class="fw-bold mb-0 text-info">{{ pending_assessments_count }}</h3>
+        <a href="/assessments" class="small text-decoration-none mt-2 d-inline-block">Score assessments &rarr;</a>
+      </div>
+    </div>
+
+    <!-- Stat 4: Slot Quota Gauge -->
+    <div class="col-12 col-sm-6 col-lg-3">
+      <div class="card p-3 shadow-sm h-100">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <span class="text-muted small">Supervisory Slot Gauge</span>
+          <span class="badge {% if available_slots == 0 %}bg-danger{% elif available_slots == 1 %}bg-warning text-dark{% else %}bg-success{% endif %}">
+            {{ available_slots }} Free
+          </span>
+        </div>
+        <div class="d-flex align-items-baseline gap-2 mb-2">
+          <h3 class="fw-bold mb-0">{{ assigned_count }}</h3>
+          <span class="text-muted small">/ {{ max_slots }} Max Slots</span>
+        </div>
+        <!-- Visual Progress Bar Slot Gauge -->
+        <div class="progress" style="height: 10px;" role="progressbar" aria-valuenow="{{ slot_percentage }}" aria-valuemin="0" aria-valuemax="100">
+          <div 
+            class="progress-bar {% if slot_percentage >= 100 %}bg-danger{% elif slot_percentage >= 75 %}bg-warning{% else %}bg-primary{% endif %}" 
+            style="width: {{ slot_percentage }}%;"
+          ></div>
+        </div>
+        <div class="d-flex justify-content-between small text-muted mt-1">
+          <span>{{ slot_percentage }}% Utilized</span>
+          <span>{% if available_slots == 0 %}<strong class="text-danger">Quota Full</strong>{% else %}Accepting Requests{% endif %}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Assigned Students Table -->
+    <div class="col-12 col-lg-8">
+      <div class="card p-4 shadow-sm mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="fw-bold mb-0"><i class="bi bi-people-fill me-2 text-primary"></i>Assigned Students</h5>
+          <span class="badge bg-secondary-subtle text-secondary">{{ assigned_count }} Students</span>
+        </div>
+
+        {% if assigned_students %}
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Student &amp; USN</th>
+                <th>Topic</th>
+                <th>Final Report</th>
+                <th>Assessment</th>
+                <th class="text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in assigned_students %}
+              <tr>
+                <td>
+                  <div class="fw-bold">{{ item.assignment.student.full_name }}</div>
+                  <div class="font-monospace small text-muted">{{ item.assignment.student.usn }}</div>
+                </td>
+                <td class="small" style="max-width: 200px;">
+                  <span class="d-inline-block text-truncate" style="max-width: 200px;" title="{{ item.assignment.topic.title }}">
+                    {{ item.assignment.topic.title }}
+                  </span>
+                </td>
+                <td>
+                  {% if item.final_approved %}
+                  <span class="badge bg-success-subtle text-success border border-success-subtle">
+                    <i class="bi bi-check-circle me-1"></i>Approved
+                  </span>
+                  {% else %}
+                  <span class="badge bg-secondary-subtle text-muted">
+                    <i class="bi bi-hourglass me-1"></i>In Progress
+                  </span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if item.assessment and item.assessment.finalized_at %}
+                  <span class="badge bg-success text-white">Grade: {{ item.assessment.coordinator_final_grade }}</span>
+                  {% elif item.has_assessment %}
+                  <span class="badge bg-info-subtle text-info">Total: {{ item.assessment.total_score }}/100</span>
+                  {% elif item.final_approved %}
+                  <span class="badge bg-warning-subtle text-warning">Ready to Grade</span>
+                  {% else %}
+                  <span class="badge bg-secondary-subtle text-muted">Locked</span>
+                  {% endif %}
+                </td>
+                <td class="text-end">
+                  <div class="btn-group btn-group-sm" role="group">
+                    <a href="/messages/{{ item.assignment.id }}" class="btn btn-outline-primary" title="Student Chat">
+                      <i class="bi bi-chat-dots"></i>
+                    </a>
+                    <a href="/submissions/reviews" class="btn btn-outline-secondary" title="Review Submissions">
+                      <i class="bi bi-check2-square"></i>
+                    </a>
+                    {% if item.final_approved and not (item.assessment and item.assessment.finalized_at) %}
+                    <a href="/assessments/{{ item.assignment.id }}/grade" class="btn btn-outline-success" title="Grade Assessment">
+                      <i class="bi bi-award"></i>
+                    </a>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5 text-muted">
+          <i class="bi bi-person-x fs-1 d-block mb-2 opacity-50"></i>
+          <h6 class="fw-bold">No Students Currently Assigned</h6>
+          <p class="small mb-0">Student assignments will appear here once assigned by the Coordinator.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Quick Actions & Pending Reviews -->
+    <div class="col-12 col-lg-4">
+      <!-- Quick Actions Card -->
+      <div class="card p-4 shadow-sm mb-4">
+        <h5 class="fw-bold mb-3"><i class="bi bi-lightning-charge me-2 text-warning"></i>Quick Actions</h5>
+        <div class="d-grid gap-2">
+          <a href="/topics/propose" class="btn btn-outline-secondary text-start">
+            <i class="bi bi-plus-circle me-2"></i>Publish Available Topic
+          </a>
+          <a href="/submissions/reviews" class="btn btn-outline-secondary text-start">
+            <i class="bi bi-check2-square me-2"></i>Review Submissions
+            {% if pending_reviews_count > 0 %}
+            <span class="badge bg-warning text-dark ms-auto">{{ pending_reviews_count }}</span>
+            {% endif %}
+          </a>
+          <a href="/assessments" class="btn btn-outline-secondary text-start">
+            <i class="bi bi-award me-2"></i>Student Assessments
+            {% if pending_assessments_count > 0 %}
+            <span class="badge bg-info text-white ms-auto">{{ pending_assessments_count }}</span>
+            {% endif %}
+          </a>
+          <a href="/archive" class="btn btn-outline-secondary text-start">
+            <i class="bi bi-archive me-2"></i>Project Archive
+          </a>
+          <a href="/forum" class="btn btn-outline-secondary text-start">
+            <i class="bi bi-chat-square-text me-2"></i>Department Forum
+          </a>
+        </div>
+      </div>
+
+      <!-- Action Required: Pending Reviews Widget -->
+      {% if pending_reviews %}
+      <div class="card p-4 shadow-sm">
+        <h6 class="fw-bold text-warning mb-3">
+          <i class="bi bi-exclamation-circle-fill me-2"></i>Submissions Awaiting Review
+        </h6>
+        <div class="list-group list-group-flush small">
+          {% for pr in pending_reviews[:4] %}
+          <div class="list-group-item px-0 py-2 d-flex justify-content-between align-items-center">
+            <div>
+              <strong class="d-block">{{ pr.student_name }}</strong>
+              <span class="text-muted">{{ pr.chapter_name }} (v{{ pr.version }})</span>
+            </div>
+            <a href="/submissions/{{ pr.submission_id }}/review" class="btn btn-sm btn-outline-warning">
+              Review
+            </a>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

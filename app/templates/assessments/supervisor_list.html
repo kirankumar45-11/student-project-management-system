@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Student Assessments{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+  <!-- Header Banner -->
+  <div class="card p-4 mb-4 border-0 bg-primary text-white shadow-sm">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+      <div>
+        <h3 class="fw-bold mb-1"><i class="bi bi-award me-2"></i>Student Project Assessments</h3>
+        <p class="mb-0 opacity-75 small">Score presentation, report, and implementation for eligible students once the Final Report is approved.</p>
+      </div>
+      <div>
+        <span class="badge bg-light text-primary fs-6 px-3 py-2">
+          <i class="bi bi-shield-check me-1"></i>Supervisor Evaluation
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Assessment Table Card -->
+  <div class="card p-4 shadow-sm">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="fw-bold mb-0">Assigned Students Evaluation Status</h5>
+      <span class="badge bg-secondary-subtle text-secondary">{{ assessment_items|length }} Students</span>
+    </div>
+
+    {% if assessment_items %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Student</th>
+            <th>USN</th>
+            <th>Project Topic</th>
+            <th>Final Report</th>
+            <th>Scores (P/R/I)</th>
+            <th>Total</th>
+            <th>Status</th>
+            <th class="text-end">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in assessment_items %}
+          <tr>
+            <td>
+              <div class="fw-bold">{{ item.assignment.student.full_name }}</div>
+              <div class="small text-muted">{{ item.assignment.student.department.code }}</div>
+            </td>
+            <td class="font-monospace small">{{ item.assignment.student.usn }}</td>
+            <td class="small" style="max-width: 220px;">
+              <span class="d-inline-block text-truncate" style="max-width: 220px;" title="{{ item.assignment.topic.title }}">
+                {{ item.assignment.topic.title }}
+              </span>
+            </td>
+            <td>
+              {% if item.is_final_approved %}
+              <span class="badge bg-success-subtle text-success border border-success-subtle">
+                <i class="bi bi-check-circle me-1"></i>Approved
+              </span>
+              {% else %}
+              <span class="badge bg-warning-subtle text-warning border border-warning-subtle">
+                <i class="bi bi-clock me-1"></i>Pending Review
+              </span>
+              {% endif %}
+            </td>
+            <td>
+              {% if item.assessment %}
+              <span class="small font-monospace">{{ item.assessment.presentation_score }} / {{ item.assessment.report_score }} / {{ item.assessment.implementation_score }}</span>
+              {% else %}
+              <span class="text-muted small">&mdash;</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if item.assessment %}
+              <strong class="text-primary">{{ item.assessment.total_score }}</strong> / 100
+              {% else %}
+              <span class="text-muted small">&mdash;</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if item.is_finalized %}
+              <span class="badge bg-success text-white">
+                <i class="bi bi-check-all me-1"></i>Grade: {{ item.assessment.coordinator_final_grade }}
+              </span>
+              {% elif item.assessment %}
+              <span class="badge bg-info-subtle text-info border border-info-subtle">
+                <i class="bi bi-hourglass-split me-1"></i>Awaiting Finalization
+              </span>
+              {% elif item.is_final_approved %}
+              <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                <i class="bi bi-pencil-square me-1"></i>Ready for Grading
+              </span>
+              {% else %}
+              <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">
+                <i class="bi bi-lock me-1"></i>Report Pending
+              </span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              {% if item.is_finalized %}
+              <button class="btn btn-outline-secondary btn-sm" disabled title="Assessment finalized and immutable">
+                <i class="bi bi-lock-fill me-1"></i>Finalized
+              </button>
+              {% elif item.is_final_approved %}
+              <a href="/assessments/{{ item.assignment.id }}/grade" class="btn btn-primary btn-sm">
+                <i class="bi bi-pencil me-1"></i>{% if item.assessment %}Edit Marks{% else %}Grade Student{% endif %}
+              </a>
+              {% else %}
+              <button class="btn btn-outline-secondary btn-sm" disabled title="Final report must be approved first">
+                <i class="bi bi-lock me-1"></i>Locked
+              </button>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-award fs-1 d-block mb-3 opacity-50"></i>
+      <h6 class="fw-bold">No Assigned Students</h6>
+      <p class="small mb-0">You do not currently have any assigned students to evaluate.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

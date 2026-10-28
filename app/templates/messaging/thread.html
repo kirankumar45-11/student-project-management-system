@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Chat with {{ other_user.username }} - SPMS{% endblock %}
+
+{% block extra_head %}
+<style>
+  .chat-box {
+    height: 480px;
+    overflow-y: auto;
+    background: var(--spms-card-bg, #ffffff);
+    border: 1px solid var(--spms-border-color, #dee2e6);
+    border-radius: 0.5rem;
+  }
+  .msg-bubble {
+    max-width: 80%;
+    padding: 0.65rem 0.95rem;
+    border-radius: 0.75rem;
+    word-break: break-word;
+    font-size: 0.925rem;
+    line-height: 1.4;
+  }
+  .msg-me {
+    background-color: #0d6efd;
+    color: #ffffff;
+    border-bottom-right-radius: 0.2rem;
+  }
+  .msg-them {
+    background-color: var(--spms-subtle-bg, #f1f3f5);
+    color: var(--spms-text, #212529);
+    border-bottom-left-radius: 0.2rem;
+  }
+  [data-bs-theme="dark"] .msg-them {
+    background-color: #2b3035;
+    color: #e9ecef;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid max-w-1000 mx-auto" id="chatContainer" data-assignment-id="{{ assignment.id }}">
+  <!-- Conversation Header -->
+  <div class="card border-0 shadow-sm mb-3">
+    <div class="card-body p-3 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2">
+      <div class="d-flex align-items-center gap-3">
+        <a href="/messaging" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i></a>
+        <div>
+          <h5 class="fw-bold mb-0 text-primary">
+            <i class="bi bi-person-circle me-1"></i>{{ other_user.username }}
+            <span class="badge bg-secondary-subtle text-secondary border small ms-1">{{ other_user.role.value }}</span>
+          </h5>
+          <div class="small text-muted text-truncate" style="max-width: 500px;">
+            <i class="bi bi-lightbulb me-1"></i>{{ assignment.topic.title }}
+          </div>
+        </div>
+      </div>
+      <div class="text-sm-end text-muted small">
+        <span>Assignment #{{ assignment.id }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chat Log Box -->
+  <div id="chatBox" class="chat-box p-3 d-flex flex-column gap-3 mb-3 shadow-sm">
+    {% if messages %}
+      {% for msg in messages %}
+      <div class="d-flex flex-column {% if msg.sender_id == current_user.id %}align-items-end{% else %}align-items-start{% endif %}" id="msg-{{ msg.id }}" data-id="{{ msg.id }}">
+        <div class="msg-bubble {% if msg.sender_id == current_user.id %}msg-me{% else %}msg-them{% endif %} shadow-sm">
+          {{ msg.content }}
+        </div>
+        <span class="text-muted small mt-1 px-1" style="font-size: 0.75rem;">
+          {{ msg.sender.username }} &bull; {{ msg.created_at.strftime('%b %d, %H:%M') }}
+        </span>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div id="noMessagesNotice" class="text-center text-muted m-auto py-5">
+        <i class="bi bi-chat-text text-secondary mb-2" style="font-size: 2.5rem;"></i>
+        <p class="small mb-0">No messages yet. Send a message to start collaborating!</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Message Input Form -->
+  <div class="card border-0 shadow-sm">
+    <div class="card-body p-3">
+      <form id="messageForm" action="/messaging/{{ assignment.id }}/send" method="POST" class="d-flex gap-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <textarea id="messageInput" name="content" class="form-control" rows="2" placeholder="Type your message here (max 2000 chars)..." required maxlength="2000"></textarea>
+        <button id="sendBtn" type="submit" class="btn btn-primary d-flex align-items-center justify-content-center px-4">
+          <i class="bi bi-send-fill fs-5"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="/static/js/chat.js" nonce="{{ request.state.csp_nonce }}"></script>
+{% endblock %}

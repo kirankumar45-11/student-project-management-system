@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Student Topic Requests - Coordinator{% endblock %}
+
+{% block content %}
+<div class="container-fluid max-w-1200 mx-auto">
+  <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
+    <div>
+      <h3 class="fw-bold text-primary mb-1"><i class="bi bi-inbox me-2"></i>Topic Allocation Requests</h3>
+      <p class="text-muted small mb-0">Review student requests for supervisor-published topics. Approving automatically handles competing requests and updates supervisor capacity.</p>
+    </div>
+    <span class="badge bg-warning-subtle text-warning border border-warning px-3 py-2 fs-6">
+      <i class="bi bi-clock-history me-1"></i>{{ requests|length }} Pending Allocations
+    </span>
+  </div>
+
+  {% if requests %}
+  <div class="row g-4">
+    {% for req in requests %}
+    <div class="col-12 col-lg-6">
+      <div class="card h-100 shadow-sm border-0">
+        <div class="card-body p-4 d-flex flex-column">
+          <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+            <div>
+              <span class="badge bg-primary-subtle text-primary border border-primary mb-1">
+                Requested Topic
+              </span>
+              <h5 class="fw-bold text-primary mb-0">{{ req.topic.title }}</h5>
+            </div>
+            <span class="badge bg-warning-subtle text-warning border border-warning">PENDING</span>
+          </div>
+
+          <div class="small text-muted mb-3">
+            Domain: <strong>{{ req.topic.domain }}</strong> | 
+            Department: <strong>{{ req.topic.department.code }}</strong>
+          </div>
+
+          <div class="p-3 bg-body-tertiary rounded border mb-3 small">
+            <div class="fw-semibold text-primary mb-1"><i class="bi bi-person-fill me-1"></i>Applicant Student:</div>
+            <div><strong>{{ req.student.full_name }}</strong> (USN: {{ req.student.usn }})</div>
+            <div class="text-muted">{{ req.student.user.email }} | Phone: {{ req.student.phone }}</div>
+            {% if req.student_remarks %}
+            <div class="mt-2 text-secondary italic">"{{ req.student_remarks }}"</div>
+            {% endif %}
+          </div>
+
+          <div class="d-flex justify-content-end gap-2 pt-3 border-top mt-auto">
+            <!-- Reject Request Modal Trigger -->
+            <button class="btn btn-outline-danger btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#rejectReqModal{{ req.id }}">
+              <i class="bi bi-x-circle me-1"></i>Reject
+            </button>
+            <!-- 1-Click Approve Form -->
+            <form action="/coordinator/topic-requests/{{ req.id }}/approve" method="POST" class="m-0">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <button type="submit" class="btn btn-success btn-sm fw-semibold">
+                <i class="bi bi-check2-circle me-1"></i>Approve & Assign
+              </button>
+            </form>
+          </div>
+
+          <!-- Reject Modal -->
+          <div class="modal fade" id="rejectReqModal{{ req.id }}" tabindex="-1" aria-labelledby="rejectReqLabel{{ req.id }}" aria-hidden="true">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <form action="/coordinator/topic-requests/{{ req.id }}/reject" method="POST">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                  <div class="modal-header">
+                    <h5 class="modal-title fw-bold text-danger" id="rejectReqLabel{{ req.id }}">Reject Topic Request</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  </div>
+                  <div class="modal-body">
+                    <p class="small text-muted mb-3">Provide a reason for rejecting student {{ req.student.full_name }}'s request for '{{ req.topic.title }}'.</p>
+                    <div class="mb-3">
+                      <label for="reqRemarks{{ req.id }}" class="form-label small fw-semibold">Rejection Remarks <span class="text-danger">*</span></label>
+                      <textarea class="form-control" id="reqRemarks{{ req.id }}" name="remarks" rows="3" required placeholder="e.g. Topic has been reserved or prerequisites are missing..."></textarea>
+                    </div>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Confirm Rejection</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="card p-5 text-center shadow-sm border-0">
+    <div class="py-5">
+      <i class="bi bi-inbox text-success display-3 d-block mb-3"></i>
+      <h4 class="fw-bold">No Pending Allocation Requests</h4>
+      <p class="text-muted small mb-0">All student topic allocation requests have been reviewed and processed.</p>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

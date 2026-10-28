@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Supervisor Messaging - SPMS{% endblock %}
+
+{% block content %}
+<div class="container-fluid max-w-1000 mx-auto">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h3 class="fw-bold text-primary mb-1"><i class="bi bi-chat-dots me-2"></i>Project Conversations</h3>
+      <p class="text-muted small mb-0">Direct 1-on-1 communication channel between assigned student and supervisor.</p>
+    </div>
+  </div>
+
+  {% if role == 'STUDENT' %}
+  <div class="card border-0 shadow-sm p-4 text-center">
+    <div class="my-4">
+      <i class="bi bi-chat-square-text text-muted" style="font-size: 3rem;"></i>
+      <h5 class="fw-bold mt-3 text-secondary">No Active Project Assignment</h5>
+      <p class="text-muted small max-w-500 mx-auto">
+        You must have an active project assignment to chat with your supervisor. Propose or request a project topic from the Topics catalog.
+      </p>
+      <a href="/topics" class="btn btn-primary btn-sm mt-2">
+        <i class="bi bi-search me-1"></i>Browse Available Topics
+      </a>
+    </div>
+  </div>
+
+  {% elif role == 'SUPERVISOR' %}
+    {% if threads %}
+    <div class="row g-3">
+      {% for t in threads %}
+      <div class="col-12 col-md-6">
+        <div class="card border-0 shadow-sm h-100 p-3 hover-shadow transition">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+              <h6 class="fw-bold text-primary mb-0">{{ t.assignment.student.full_name }}</h6>
+              <span class="text-muted small">USN: {{ t.assignment.student.usn }}</span>
+            </div>
+            {% if t.unread_count > 0 %}
+            <span class="badge bg-danger rounded-pill">{{ t.unread_count }} new</span>
+            {% endif %}
+          </div>
+          <div class="small text-secondary mb-2">
+            <i class="bi bi-lightbulb me-1"></i><strong>Topic:</strong> {{ t.assignment.topic.title }}
+          </div>
+          {% if t.last_message %}
+          <p class="text-muted small mb-3 text-truncate">
+            <strong>{{ t.last_message.sender.username }}:</strong> {{ t.last_message.content }}
+          </p>
+          {% else %}
+          <p class="text-muted small fst-italic mb-3">No messages exchanged yet.</p>
+          {% endif %}
+          <div class="mt-auto pt-2 border-top d-flex justify-content-between align-items-center">
+            <span class="text-muted small">{{ t.last_message.created_at.strftime('%b %d, %H:%M') if t.last_message else '' }}</span>
+            <a href="/messaging/{{ t.assignment.id }}" class="btn btn-outline-primary btn-sm fw-semibold">
+              <i class="bi bi-chat-text me-1"></i>Open Chat
+            </a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="card border-0 shadow-sm p-4 text-center">
+      <div class="my-4">
+        <i class="bi bi-person-x text-muted" style="font-size: 3rem;"></i>
+        <h5 class="fw-bold mt-3 text-secondary">No Assigned Students Yet</h5>
+        <p class="text-muted small">Once students are assigned to you by the project coordinator, their message threads will appear here.</p>
+      </div>
+    </div>
+    {% endif %}
+
+  {% else %}
+  <div class="card border-0 shadow-sm p-4 text-center">
+    <div class="my-4">
+      <i class="bi bi-shield-check text-primary" style="font-size: 3rem;"></i>
+      <h5 class="fw-bold mt-3">Coordinator Overview</h5>
+      <p class="text-muted small">Student-supervisor messaging is strictly private to assigned pairs.</p>
+      <a href="/coordinator/topics" class="btn btn-outline-primary btn-sm">View Project Topics</a>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

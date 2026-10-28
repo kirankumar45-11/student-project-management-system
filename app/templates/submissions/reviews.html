@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Review Student Submissions - SPMS Supervisor{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+  <!-- Header Bar -->
+  <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
+    <div>
+      <h3 class="fw-bold mb-1">
+        <i class="bi bi-check2-square text-primary me-2"></i>Review Chapter Submissions
+      </h3>
+      <p class="text-muted small mb-0">Evaluate student milestone submissions, inspect version history, and provide structured feedback.</p>
+    </div>
+    <div>
+      <span class="badge bg-primary-subtle text-primary border border-primary p-2">
+        <i class="bi bi-people me-1"></i>{{ review_data|length }} Assigned Students
+      </span>
+    </div>
+  </div>
+
+  {% if not review_data %}
+  <div class="card p-5 text-center shadow-sm">
+    <i class="bi bi-journal-check text-muted mb-3" style="font-size: 3.5rem;"></i>
+    <h4 class="fw-bold">No Active Supervised Projects</h4>
+    <p class="text-muted small mb-0">You do not currently have any active student project assignments to review.</p>
+  </div>
+  {% else %}
+
+  <div class="d-flex flex-column gap-4">
+    {% for item in review_data %}
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-body-tertiary p-3 border-bottom d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+        <div>
+          <span class="badge bg-secondary-subtle text-secondary border small mb-1">USN: {{ item.student.usn }}</span>
+          <h5 class="fw-bold mb-0">{{ item.student.full_name }}</h5>
+          <div class="text-muted small">{{ item.student.department.code }} | {{ item.student.session.name }}</div>
+        </div>
+        <div class="text-md-end">
+          <div class="small text-muted mb-1">Topic: <strong>{{ item.topic.title }}</strong></div>
+          {% if item.github_url %}
+          <a href="{{ item.github_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-dark btn-sm py-0 px-2">
+            <i class="bi bi-github me-1"></i>GitHub Repo
+            {% if item.github_url_locked %}
+            <span class="badge bg-danger ms-1">Locked</span>
+            {% endif %}
+          </a>
+          {% else %}
+          <span class="badge bg-warning-subtle text-warning border border-warning small">No GitHub Linked</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="card-body p-3 p-md-4">
+        <!-- Chapter Milestone Tracker -->
+        <h6 class="fw-bold small text-muted text-uppercase mb-2">Milestone Progress</h6>
+        <div class="row g-2 mb-4 text-center small">
+          {% for ch in item.chapters %}
+          <div class="col-6 col-md-3">
+            <div class="p-2 rounded border {% if ch.status == 'APPROVED' %}border-success bg-success-subtle text-success{% elif ch.status == 'Pending Review' %}border-info bg-info-subtle text-info{% elif ch.status == 'NEEDS_REVISION' %}border-warning bg-warning-subtle text-warning{% else %}bg-body-tertiary text-muted{% endif %}">
+              <strong class="d-block text-truncate">{{ ch.display_name }}</strong>
+              <span class="badge mt-1 {% if ch.status == 'APPROVED' %}bg-success{% elif ch.status == 'Pending Review' %}bg-info text-dark{% elif ch.status == 'NEEDS_REVISION' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                {{ ch.status }}
+              </span>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- Pending Submissions Needing Review -->
+        {% if item.pending_subs %}
+        <div class="border rounded p-3 bg-primary-subtle border-primary">
+          <h6 class="fw-bold text-primary mb-2">
+            <i class="bi bi-bell-fill me-1"></i>Action Required: Submissions Awaiting Your Review
+          </h6>
+          <div class="list-group list-group-flush rounded bg-body">
+            {% for sub in item.pending_subs %}
+            <div class="list-group-item d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2 p-2 px-3">
+              <div>
+                <span class="badge bg-primary me-2">{{ sub.chapter.value }}</span>
+                <strong>Version {{ sub.version }}</strong> &mdash; 
+                <span class="text-muted small">{{ sub.original_filename }}</span>
+                <span class="badge {% if sub.is_late %}bg-danger{% else %}bg-success{% endif %} ms-2 small">
+                  {{ 'Late' if sub.is_late else 'On-time' }}
+                </span>
+                <div class="small text-muted">Submitted: {{ sub.submitted_at.strftime('%Y-%m-%d %H:%M') }}</div>
+              </div>
+              <div class="d-flex gap-2">
+                <a href="/submissions/{{ sub.id }}/download" class="btn btn-outline-secondary btn-sm">
+                  <i class="bi bi-download me-1"></i>Download
+                </a>
+                <a href="/submissions/{{ sub.id }}/review" class="btn btn-primary btn-sm">
+                  <i class="bi bi-pencil-square me-1"></i>Review & Grade
+                </a>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% else %}
+        <div class="text-muted small">
+          <i class="bi bi-check2-circle text-success me-1"></i>All submissions for this student are up-to-date with feedback.
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% endif %}
+</div>
+{% endblock %}

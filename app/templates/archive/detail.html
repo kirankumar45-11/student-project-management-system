@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}{{ topic.title }} - Project Archive{% endblock %}
+
+{% block content %}
+<div class="container-fluid max-w-1000 mx-auto px-0">
+  <!-- Breadcrumb -->
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/archive" class="text-decoration-none"><i class="bi bi-archive-fill me-1"></i>Project Archive</a></li>
+      <li class="breadcrumb-item active text-truncate" aria-current="page" style="max-width: 500px;">{{ topic.title }}</li>
+    </ol>
+  </nav>
+
+  <!-- Hero Header Card -->
+  <div class="card p-4 mb-4 border-0 bg-primary text-white shadow-sm">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start gap-3">
+      <div>
+        <div class="d-flex flex-wrap gap-2 mb-2">
+          <span class="badge bg-light text-primary fw-bold">{{ topic.domain }}</span>
+          <span class="badge bg-info-subtle text-white border border-light-subtle">{{ topic.department.code }} - {{ topic.department.name }}</span>
+          <span class="badge bg-secondary-subtle text-white border border-light-subtle">{{ topic.session.name }}</span>
+        </div>
+        <h3 class="fw-bold mb-2">{{ topic.title }}</h3>
+        <p class="mb-0 opacity-75 small">
+          Supervised by: <strong>{{ supervisor_name }}</strong> &bull; Completed and Archived on <strong>{{ completed_at.strftime('%B %d, %Y') if completed_at else 'Verified' }}</strong>
+        </p>
+      </div>
+      <div class="text-md-end flex-shrink-0">
+        <span class="badge bg-white text-success fs-5 px-3 py-2 fw-bold shadow-sm">
+          <i class="bi bi-award-fill me-1"></i>Grade: {{ final_grade }}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Left Column: Abstract & Methodologies -->
+    <div class="col-12 col-lg-8">
+      <div class="card p-4 shadow-sm border-0 mb-4">
+        <h5 class="fw-bold text-primary mb-3"><i class="bi bi-file-text-fill me-2"></i>Executive Abstract &amp; Problem Statement</h5>
+        <p class="text-muted" style="white-space: pre-line; line-height: 1.7;">
+          {{ topic.description }}
+        </p>
+      </div>
+
+      <!-- Deliverables & Code Repository -->
+      <div class="card p-4 shadow-sm border-0">
+        <h5 class="fw-bold text-primary mb-3"><i class="bi bi-journal-code me-2"></i>Verified Project Deliverables</h5>
+        <div class="d-flex flex-column flex-sm-row gap-3">
+          {% if github_url %}
+          <a href="{{ github_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-dark flex-grow-1 text-truncate">
+            <i class="bi bi-github me-2"></i>View Code Repository (Locked)
+          </a>
+          {% endif %}
+
+          {% if has_final_report %}
+          <a href="/archive/{{ topic.id }}/download" class="btn btn-primary flex-grow-1 text-truncate">
+            <i class="bi bi-file-earmark-arrow-down-fill me-2"></i>Download Final Report (PDF)
+          </a>
+          {% else %}
+          <button class="btn btn-outline-secondary flex-grow-1" disabled>
+            <i class="bi bi-file-earmark-x me-2"></i>Final Report Unavailable
+          </button>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Metadata & Access Rules -->
+    <div class="col-12 col-lg-4">
+      <div class="card p-4 shadow-sm border-0 mb-4">
+        <h6 class="fw-bold text-primary mb-3"><i class="bi bi-info-circle-fill me-2"></i>Project Metadata</h6>
+        <dl class="row mb-0 small">
+          <dt class="col-5 text-muted">Topic ID:</dt>
+          <dd class="col-7 fw-semibold">#{{ topic.id }}</dd>
+
+          <dt class="col-5 text-muted">Department:</dt>
+          <dd class="col-7">{{ topic.department.name }}</dd>
+
+          <dt class="col-5 text-muted">Academic Year:</dt>
+          <dd class="col-7">{{ topic.session.name }}</dd>
+
+          <dt class="col-5 text-muted">Supervisor:</dt>
+          <dd class="col-7">{{ supervisor_name }}</dd>
+
+          <dt class="col-5 text-muted">Final Status:</dt>
+          <dd class="col-7"><span class="badge bg-success-subtle text-success border border-success">COMPLETED &amp; ARCHIVED</span></dd>
+        </dl>
+      </div>
+
+      <div class="card p-4 shadow-sm border-start border-4 border-info">
+        <h6 class="fw-bold text-info mb-2"><i class="bi bi-shield-check me-2"></i>Privacy &amp; Reference Policy</h6>
+        <p class="small text-muted mb-2">
+          This project record is preserved for academic review and institutional reference.
+        </p>
+        <span class="badge bg-info-subtle text-info border border-info small">
+          Student PII (USN, phone, email) strictly excluded
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

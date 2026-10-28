@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Department Forum - SPMS{% endblock %}
+
+{% block content %}
+<div class="container-fluid max-w-1000 mx-auto">
+  <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
+    <div>
+      <h3 class="fw-bold text-primary mb-1">
+        <i class="bi bi-chat-square-quote me-2"></i>Department Forum
+      </h3>
+      <p class="text-muted small mb-0">
+        Discussions scoped to <strong>{{ department.name }} ({{ department.code }})</strong>.
+      </p>
+    </div>
+    <div class="d-flex gap-2 align-items-center">
+      {% if departments %}
+      <!-- Coordinator Department Filter -->
+      <form method="GET" action="/forum" class="d-flex gap-1 m-0">
+        <select name="dept_id" class="form-select form-select-sm" onchange="this.form.submit()">
+          {% for d in departments %}
+          <option value="{{ d.id }}" {% if d.id == department.id %}selected{% endif %}>{{ d.code }}</option>
+          {% endfor %}
+        </select>
+      </form>
+      {% endif %}
+      <a href="/forum/new" class="btn btn-primary btn-sm fw-semibold text-nowrap">
+        <i class="bi bi-plus-circle me-1"></i>New Discussion
+      </a>
+    </div>
+  </div>
+
+  {% if threads %}
+  <div class="card border-0 shadow-sm overflow-hidden mb-4">
+    <div class="list-group list-group-flush">
+      {% for thread in threads %}
+      <a href="/forum/{{ thread.id }}" class="list-group-item list-group-item-action p-3 d-flex justify-content-between align-items-start gap-3">
+        <div class="flex-grow-1">
+          <div class="d-flex align-items-center gap-2 mb-1">
+            {% if thread.is_pinned %}
+            <span class="badge bg-danger-subtle text-danger border border-danger small"><i class="bi bi-pin-angle-fill me-1"></i>Pinned</span>
+            {% endif %}
+            <h6 class="fw-bold text-primary mb-0">{{ thread.title }}</h6>
+          </div>
+          <p class="text-secondary small mb-2 text-truncate" style="max-width: 650px;">
+            {{ thread.content }}
+          </p>
+          <div class="text-muted small" style="font-size: 0.8rem;">
+            <span>By <strong>{{ thread.author.username }}</strong> ({{ thread.author.role.value }})</span> &bull; 
+            <span>{{ thread.created_at.strftime('%b %d, %Y at %H:%M') }}</span>
+          </div>
+        </div>
+        <div class="text-end text-nowrap">
+          <span class="badge bg-primary-subtle text-primary border border-primary px-2 py-1">
+            <i class="bi bi-chat-left-dots me-1"></i>{{ thread.replies|length }}
+          </span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  {% if total_pages > 1 %}
+  <nav aria-label="Forum pagination">
+    <ul class="pagination pagination-sm justify-content-center">
+      <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+        <a class="page-link" href="/forum?page={{ page - 1 }}{% if department %}&dept_id={{ department.id }}{% endif %}">Previous</a>
+      </li>
+      {% for p in range(1, total_pages + 1) %}
+      <li class="page-item {% if p == page %}active{% endif %}">
+        <a class="page-link" href="/forum?page={{ p }}{% if department %}&dept_id={{ department.id }}{% endif %}">{{ p }}</a>
+      </li>
+      {% endfor %}
+      <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+        <a class="page-link" href="/forum?page={{ page + 1 }}{% if department %}&dept_id={{ department.id }}{% endif %}">Next</a>
+      </li>
+    </ul>
+  </nav>
+  {% endif %}
+
+  {% else %}
+  <div class="card border-0 shadow-sm p-5 text-center">
+    <div class="my-4">
+      <i class="bi bi-chat-square-dots text-muted" style="font-size: 3rem;"></i>
+      <h5 class="fw-bold mt-3 text-secondary">No Discussions Yet</h5>
+      <p class="text-muted small">Be the first to start a conversation in the {{ department.name }} forum!</p>
+      <a href="/forum/new" class="btn btn-primary btn-sm mt-2">
+        <i class="bi bi-plus-circle me-1"></i>Start Discussion
+      </a>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

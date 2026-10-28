@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}Finalize Project Grade{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0" style="max-width: 800px;">
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="/coordinator/assessments">Assessments</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Finalize Evaluation</li>
+    </ol>
+  </nav>
+
+  <!-- Project Summary Card -->
+  <div class="card p-4 mb-4 shadow-sm">
+    <div class="d-flex justify-content-between align-items-start border-bottom pb-3 mb-3">
+      <div>
+        <h5 class="fw-bold mb-1 text-primary">{{ assignment.topic.title }}</h5>
+        <div class="text-muted small">Domain: {{ assignment.topic.domain }}</div>
+      </div>
+      {% if assessment.finalized_at %}
+      <span class="badge bg-success fs-6 px-3 py-2">
+        <i class="bi bi-lock-fill me-1"></i>Finalized Grade: {{ assessment.coordinator_final_grade }}
+      </span>
+      {% else %}
+      <span class="badge bg-warning text-dark fs-6 px-3 py-2">
+        <i class="bi bi-hourglass-split me-1"></i>Pending Finalization
+      </span>
+      {% endif %}
+    </div>
+
+    <div class="row g-3 small">
+      <div class="col-12 col-sm-6">
+        <span class="text-muted d-block">Student:</span>
+        <strong class="fs-6">{{ assignment.student.full_name }}</strong> ({{ assignment.student.usn }})
+        <div class="text-muted">{{ assignment.student.department.code }} | {{ assignment.session.name }}</div>
+      </div>
+      <div class="col-12 col-sm-6">
+        <span class="text-muted d-block">Supervisor:</span>
+        <strong class="fs-6">{{ assignment.supervisor.full_name }}</strong>
+        <div class="text-muted">{{ assignment.supervisor.designation }}</div>
+      </div>
+      <div class="col-12">
+        <span class="text-muted d-block">GitHub Repository:</span>
+        {% if assignment.github_url %}
+        <a href="{{ assignment.github_url }}" target="_blank" rel="noopener noreferrer" class="text-decoration-none">
+          <i class="bi bi-github me-1"></i>{{ assignment.github_url }}
+        </a>
+        {% else %}
+        <span class="text-muted fst-italic">None provided</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Supervisor Evaluation Breakdown Card -->
+  <div class="card p-4 mb-4 shadow-sm">
+    <h5 class="fw-bold mb-3"><i class="bi bi-clipboard2-check me-2 text-primary"></i>Supervisor Marks Breakdown</h5>
+    
+    <div class="row g-3 text-center mb-4">
+      <div class="col-4">
+        <div class="p-3 rounded border bg-body-tertiary">
+          <div class="text-muted small mb-1">Presentation</div>
+          <div class="fs-4 fw-bold text-primary">{{ assessment.presentation_score }}</div>
+          <div class="small text-muted">/ 30</div>
+        </div>
+      </div>
+      <div class="col-4">
+        <div class="p-3 rounded border bg-body-tertiary">
+          <div class="text-muted small mb-1">Report Quality</div>
+          <div class="fs-4 fw-bold text-info">{{ assessment.report_score }}</div>
+          <div class="small text-muted">/ 30</div>
+        </div>
+      </div>
+      <div class="col-4">
+        <div class="p-3 rounded border bg-body-tertiary">
+          <div class="text-muted small mb-1">Implementation</div>
+          <div class="fs-4 fw-bold text-success">{{ assessment.implementation_score }}</div>
+          <div class="small text-muted">/ 40</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert alert-primary d-flex justify-content-between align-items-center p-3 mb-3">
+      <div>
+        <h6 class="fw-bold mb-0">Aggregate Score:</h6>
+        <div class="small opacity-75">Supervisor Evaluation Total</div>
+      </div>
+      <div class="fs-3 fw-bold">{{ assessment.total_score }} <span class="fs-6 text-muted">/ 100</span></div>
+    </div>
+
+    {% if assessment.supervisor_remarks %}
+    <div class="p-3 rounded bg-body-tertiary border">
+      <h6 class="fw-bold mb-1"><i class="bi bi-chat-quote me-2"></i>Supervisor Remarks:</h6>
+      <p class="small text-muted mb-0">{{ assessment.supervisor_remarks }}</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Finalization Card -->
+  <div class="card p-4 shadow-sm">
+    {% if assessment.finalized_at %}
+    <!-- Finalized Audit Card -->
+    <div class="alert alert-success d-flex align-items-center gap-3 mb-3">
+      <i class="bi bi-shield-check fs-2"></i>
+      <div>
+        <h6 class="fw-bold mb-1">Assessment Finalized &amp; Immutable</h6>
+        <p class="small mb-0">
+          This project was finalized with grade <strong>{{ assessment.coordinator_final_grade }}</strong> on 
+          {{ assessment.finalized_at.strftime('%Y-%m-%d %H:%M UTC') }}. Changes are strictly locked.
+        </p>
+      </div>
+    </div>
+    <div class="text-end">
+      <a href="/coordinator/assessments" class="btn btn-outline-secondary">Back to Assessments</a>
+    </div>
+    {% else %}
+    <!-- Finalization Action Form -->
+    <h5 class="fw-bold mb-2"><i class="bi bi-award me-2 text-primary"></i>Assign Final Grade &amp; Archive</h5>
+    <p class="text-muted small mb-4">
+      Select or enter the official department letter grade for this project. Once finalized, this assessment becomes 
+      <strong>immutable</strong>, the project transitions to <strong>COMPLETED</strong>, and the topic is archived for duplicate checking.
+    </p>
+
+    <form method="POST" action="/coordinator/assessments/{{ assessment.id }}/finalize">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+      <div class="mb-4">
+        <label for="coordinator_final_grade" class="form-label fw-semibold">Coordinator Final Letter Grade <span class="text-danger">*</span></label>
+        <select class="form-select form-select-lg mb-2" id="coordinator_final_grade" name="coordinator_final_grade" required>
+          <option value="" disabled selected>-- Select Official Grade --</option>
+          <option value="A+" {% if assessment.total_score >= 90 %}selected{% endif %}>A+ (Distinction / Outstanding: 90-100)</option>
+          <option value="A" {% if assessment.total_score >= 80 and assessment.total_score < 90 %}selected{% endif %}>A (Excellent: 80-89)</option>
+          <option value="B+" {% if assessment.total_score >= 70 and assessment.total_score < 80 %}selected{% endif %}>B+ (Very Good: 70-79)</option>
+          <option value="B" {% if assessment.total_score >= 60 and assessment.total_score < 70 %}selected{% endif %}>B (Good: 60-69)</option>
+          <option value="C" {% if assessment.total_score >= 50 and assessment.total_score < 60 %}selected{% endif %}>C (Satisfactory: 50-59)</option>
+          <option value="F" {% if assessment.total_score < 50 %}selected{% endif %}>F (Fail / Needs Redo: &lt;50)</option>
+        </select>
+        <div class="form-text">System pre-selects recommended grade based on supervisor aggregate score. You may adjust prior to finalizing.</div>
+      </div>
+
+      <div class="alert alert-warning d-flex align-items-center gap-2 small mb-4">
+        <i class="bi bi-exclamation-triangle-fill fs-5 flex-shrink-0"></i>
+        <div>
+          <strong>Important:</strong> Finalizing is an audited permanent action. Both the student and supervisor will receive immediate notifications.
+        </div>
+      </div>
+
+      <div class="d-flex flex-column flex-sm-row justify-content-end gap-2">
+        <a href="/coordinator/assessments" class="btn btn-outline-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary px-4 fw-semibold">
+          <i class="bi bi-check2-circle me-1"></i>Finalize &amp; Archive Project
+        </button>
+      </div>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

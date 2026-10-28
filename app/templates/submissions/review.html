@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block title %}Review Submission - SPMS Supervisor{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-0">
+  <!-- Back Button & Breadcrumbs -->
+  <div class="mb-3">
+    <a href="/submissions/reviews" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left me-1"></i>Back to Submissions List
+    </a>
+  </div>
+
+  <div class="row g-4">
+    <!-- Left Column: Student & Submission Info -->
+    <div class="col-12 col-lg-7">
+      <!-- Project Metadata -->
+      <div class="card p-4 shadow-sm mb-4">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <span class="badge bg-primary-subtle text-primary border border-primary">
+            {{ assignment.session.name }}
+          </span>
+          {% if assignment.github_url %}
+          <a href="{{ assignment.github_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-dark btn-sm py-0 px-2">
+            <i class="bi bi-github me-1"></i>Repository
+          </a>
+          {% endif %}
+        </div>
+        <h4 class="fw-bold mb-1">{{ assignment.topic.title }}</h4>
+        <p class="text-muted small mb-3">{{ assignment.topic.description }}</p>
+
+        <div class="row g-2 border-top pt-3 small">
+          <div class="col-sm-6">
+            <span class="text-muted d-block">Student:</span>
+            <strong>{{ assignment.student.full_name }}</strong> ({{ assignment.student.usn }})
+          </div>
+          <div class="col-sm-6">
+            <span class="text-muted d-block">Department:</span>
+            <strong>{{ assignment.student.department.name }}</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Current Submission Document Card -->
+      <div class="card p-4 shadow-sm mb-4 border-primary">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="fw-bold mb-0 text-primary">
+            <i class="bi bi-file-earmark-text me-2"></i>{{ chapter_display }} (Version {{ submission.version }})
+          </h5>
+          {% if submission.is_late %}
+          <span class="badge bg-danger">
+            <i class="bi bi-exclamation-triangle me-1"></i>Late Submission
+          </span>
+          {% else %}
+          <span class="badge bg-success">
+            <i class="bi bi-check-circle me-1"></i>On-time Submission
+          </span>
+          {% endif %}
+        </div>
+
+        <div class="p-3 rounded border bg-body-tertiary mb-3">
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+              <div class="fw-bold text-truncate" style="max-width: 280px;">{{ submission.original_filename }}</div>
+              <div class="small text-muted">
+                {{ (submission.file_size / 1024)|round(1) }} KB &bull; Submitted on {{ submission.submitted_at.strftime('%Y-%m-%d %H:%M') }}
+              </div>
+            </div>
+            <a href="/submissions/{{ submission.id }}/download" class="btn btn-primary btn-sm">
+              <i class="bi bi-download me-1"></i>Download File
+            </a>
+          </div>
+        </div>
+
+        {% if submission.chapter.value == 'FINAL_REPORT' %}
+        <div class="alert alert-info py-2 small mb-0">
+          <i class="bi bi-info-circle me-1"></i><strong>Final Report Milestone:</strong> Approving this submission will lock the student's GitHub repository link and record project completion.
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Version History of this Chapter -->
+      {% if version_history|length > 1 %}
+      <div class="card p-4 shadow-sm">
+        <h6 class="fw-bold text-muted text-uppercase small mb-3">
+          <i class="bi bi-clock-history me-1"></i>Full Chapter History
+        </h6>
+        <div class="list-group list-group-flush border rounded">
+          {% for v in version_history %}
+          {% set v_fb = v.feedback[-1] if v.feedback else None %}
+          <div class="list-group-item p-3 {% if v.id == submission.id %}bg-light border-start border-4 border-primary{% endif %}">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <strong>Version {{ v.version }}</strong>
+              <div class="d-flex align-items-center gap-2">
+                {% if v_fb %}
+                  {% if v_fb.status.value == 'APPROVED' %}
+                  <span class="badge bg-success">Approved</span>
+                  {% else %}
+                  <span class="badge bg-warning text-dark">Needs Revision</span>
+                  {% endif %}
+                {% else %}
+                  <span class="badge bg-info text-dark">Current / Under Review</span>
+                {% endif %}
+                <a href="/submissions/{{ v.id }}/download" class="btn btn-outline-secondary btn-sm py-0 px-2" title="Download this version">
+                  <i class="bi bi-download"></i>
+                </a>
+              </div>
+            </div>
+            <div class="small text-muted mb-1">
+              {{ v.original_filename }} &bull; {{ v.submitted_at.strftime('%Y-%m-%d %H:%M') }}
+              {% if v.is_late %}<span class="text-danger ms-1">(Late)</span>{% endif %}
+            </div>
+            {% if v_fb %}
+            <div class="small p-2 bg-body-tertiary rounded border mt-2">
+              <div class="text-muted small">Supervisor Comments:</div>
+              <div>{{ v_fb.comments }}</div>
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Right Column: Supervisor Evaluation Form -->
+    <div class="col-12 col-lg-5">
+      <div class="card p-4 shadow-sm border-0 sticky-top" style="top: 80px;">
+        <h5 class="fw-bold mb-3">
+          <i class="bi bi-award text-primary me-2"></i>Supervisor Evaluation
+        </h5>
+
+        <form action="/submissions/{{ submission.id }}/feedback" method="POST">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Decision</label>
+            <div class="d-flex gap-3">
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="status" id="statusApprove" value="APPROVED" required>
+                <label class="form-check-label fw-bold text-success" for="statusApprove">
+                  <i class="bi bi-check-circle me-1"></i>Approve Milestone
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="status" id="statusRevision" value="NEEDS_REVISION" required>
+                <label class="form-check-label fw-bold text-warning" for="statusRevision">
+                  <i class="bi bi-arrow-repeat me-1"></i>Needs Revision
+                </label>
+              </div>
+            </div>
+            <div class="form-text small">
+              Selecting <em>Needs Revision</em> unlocks a new version submission for the student.
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold" for="comments">Supervisor Feedback & Rubric Notes</label>
+            <textarea name="comments" id="comments" class="form-control" rows="5" 
+                      placeholder="Detail specific observations, strengths, required fixes, or rubric scores..." required></textarea>
+            <div class="form-text small">Comments will be delivered directly to the student's dashboard.</div>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
+            <i class="bi bi-send me-1"></i>Submit Decision & Notify Student
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

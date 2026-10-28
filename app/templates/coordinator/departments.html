@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Departments - Coordinator{% endblock %}
+
+{% block content %}
+<div class="container-fluid max-w-1200 mx-auto">
+  <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
+    <div>
+      <h3 class="fw-bold text-primary mb-1"><i class="bi bi-buildings me-2"></i>Departments</h3>
+      <p class="text-muted small mb-0">Configure academic departments and view enrolled students & staff.</p>
+    </div>
+    <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#newDeptForm" aria-expanded="false" aria-controls="newDeptForm">
+      <i class="bi bi-plus-lg me-1"></i>Add Department
+    </button>
+  </div>
+
+  <!-- Collapse: Add Department Form -->
+  <div class="collapse mb-4" id="newDeptForm">
+    <div class="card p-4 shadow-sm border-primary">
+      <h5 class="fw-bold mb-3"><i class="bi bi-plus-circle me-2 text-primary"></i>Create New Department</h5>
+      <form action="/coordinator/departments" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div class="row g-3">
+          <div class="col-12 col-md-4">
+            <label for="code" class="form-label small fw-semibold">Department Code <span class="text-danger">*</span></label>
+            <input type="text" class="form-control text-uppercase" id="code" name="code" placeholder="e.g. CSE" required maxlength="16">
+          </div>
+          <div class="col-12 col-md-8">
+            <label for="name" class="form-label small fw-semibold">Department Full Name <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="name" name="name" placeholder="e.g. Computer Science & Engineering" required maxlength="128">
+          </div>
+          <div class="col-12 text-end">
+            <button type="button" class="btn btn-outline-secondary me-2" data-bs-toggle="collapse" data-bs-target="#newDeptForm">Cancel</button>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i>Save Department</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Departments Table / Cards -->
+  <div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th scope="col" style="width: 80px;">Code</th>
+              <th scope="col">Department Name</th>
+              <th scope="col" class="text-center" style="width: 140px;">Students</th>
+              <th scope="col" class="text-center" style="width: 140px;">Supervisors</th>
+              <th scope="col" class="text-end" style="width: 120px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in departments %}
+            <tr>
+              <td><span class="badge bg-primary-subtle text-primary border border-primary fw-bold">{{ item.dept.code }}</span></td>
+              <td class="fw-semibold">{{ item.dept.name }}</td>
+              <td class="text-center"><span class="badge bg-secondary-subtle text-secondary">{{ item.student_count }}</span></td>
+              <td class="text-center"><span class="badge bg-info-subtle text-info">{{ item.supervisor_count }}</span></td>
+              <td class="text-end">
+                <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#editDeptModal{{ item.dept.id }}">
+                  <i class="bi bi-pencil"></i>
+                </button>
+              </td>
+            </tr>
+
+            <!-- Edit Modal -->
+            <div class="modal fade" id="editDeptModal{{ item.dept.id }}" tabindex="-1" aria-labelledby="editDeptLabel{{ item.dept.id }}" aria-hidden="true">
+              <div class="modal-dialog">
+                <div class="modal-content">
+                  <form action="/coordinator/departments/{{ item.dept.id }}/edit" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <div class="modal-header">
+                      <h5 class="modal-title fw-bold" id="editDeptLabel{{ item.dept.id }}">Edit Department</h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                      <div class="mb-3">
+                        <label class="form-label small fw-semibold">Code</label>
+                        <input type="text" class="form-control text-uppercase" name="code" value="{{ item.dept.code }}" required>
+                      </div>
+                      <div class="mb-3">
+                        <label class="form-label small fw-semibold">Name</label>
+                        <input type="text" class="form-control" name="name" value="{{ item.dept.name }}" required>
+                      </div>
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                      <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+            {% else %}
+            <tr>
+              <td colspan="5" class="p-5 text-center text-muted">
+                <i class="bi bi-buildings fs-1 d-block mb-2 opacity-50"></i>
+                No departments configured yet.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

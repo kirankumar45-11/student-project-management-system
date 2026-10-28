@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}Project Guidelines - SPMS{% endblock %}
+
+{% block content %}
+<div class="container-fluid max-w-1000 mx-auto">
+  <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
+    <div>
+      <h3 class="fw-bold text-primary mb-1">
+        <i class="bi bi-journal-text me-2"></i>Project Guidelines
+      </h3>
+      <p class="text-muted small mb-0">Official templates, documentation formats, and academic project manuals.</p>
+    </div>
+    {% if is_coordinator %}
+    <button class="btn btn-primary btn-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#uploadGuidelineModal">
+      <i class="bi bi-cloud-arrow-up me-1"></i>Upload Guideline
+    </button>
+    {% endif %}
+  </div>
+
+  {% if guidelines %}
+  <div class="card border-0 shadow-sm overflow-hidden mb-4">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th class="ps-3">Document Title</th>
+            <th>Original File</th>
+            <th>File Size</th>
+            <th>Uploaded Date</th>
+            <th class="text-end pe-3">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for g in guidelines %}
+          <tr>
+            <td class="ps-3">
+              <div class="fw-bold text-primary">{{ g.title }}</div>
+              {% if g.description %}
+              <div class="small text-muted">{{ g.description }}</div>
+              {% endif %}
+            </td>
+            <td>
+              <span class="badge bg-secondary-subtle text-secondary border small">
+                <i class="bi bi-file-earmark-text me-1"></i>{{ g.original_filename }}
+              </span>
+            </td>
+            <td class="small text-muted">
+              {{ (g.file_size / 1024)|round(1) }} KB
+            </td>
+            <td class="small text-muted">
+              {{ g.created_at.strftime('%b %d, %Y') }}
+            </td>
+            <td class="text-end pe-3">
+              <div class="d-flex justify-content-end gap-1">
+                <a href="/guidelines/{{ g.id }}/download" class="btn btn-outline-primary btn-sm" title="Download Document">
+                  <i class="bi bi-download me-1"></i>Download
+                </a>
+                {% if is_coordinator %}
+                <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#editModal{{ g.id }}" title="Edit Info">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <form action="/guidelines/{{ g.id }}/delete" method="POST" class="d-inline m-0" onsubmit="return confirm('Delete this guideline document?')">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                  <button type="submit" class="btn btn-outline-danger btn-sm" title="Delete">
+                    <i class="bi bi-trash3"></i>
+                  </button>
+                </form>
+                {% endif %}
+              </div>
+
+              <!-- Edit Modal -->
+              {% if is_coordinator %}
+              <div class="modal fade" id="editModal{{ g.id }}" tabindex="-1" aria-labelledby="editLabel{{ g.id }}" aria-hidden="true">
+                <div class="modal-dialog text-start">
+                  <div class="modal-content">
+                    <form action="/guidelines/{{ g.id }}/edit" method="POST">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                      <div class="modal-header">
+                        <h5 class="modal-title fw-bold" id="editLabel{{ g.id }}">Edit Guideline</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      </div>
+                      <div class="modal-body">
+                        <div class="mb-3">
+                          <label class="form-label fw-semibold">Title</label>
+                          <input type="text" name="title" class="form-control" value="{{ g.title }}" required maxlength="128">
+                        </div>
+                        <div class="mb-3">
+                          <label class="form-label fw-semibold">Description</label>
+                          <textarea name="description" class="form-control" rows="3">{{ g.description or '' }}</textarea>
+                        </div>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary btn-sm fw-semibold">Save Changes</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+              {% endif %}
+
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% else %}
+  <div class="card border-0 shadow-sm p-5 text-center">
+    <div class="my-4">
+      <i class="bi bi-journal-x text-muted" style="font-size: 3rem;"></i>
+      <h5 class="fw-bold mt-3 text-secondary">No Guidelines Published Yet</h5>
+      <p class="text-muted small">Official guidelines and report templates will be published here by the coordinator.</p>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Upload Modal (Coordinator Only) -->
+  {% if is_coordinator %}
+  <div class="modal fade" id="uploadGuidelineModal" tabindex="-1" aria-labelledby="uploadLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form action="/guidelines/upload" method="POST" enctype="multipart/form-data">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <div class="modal-header">
+            <h5 class="modal-title fw-bold text-primary" id="uploadLabel">
+              <i class="bi bi-cloud-arrow-up me-2"></i>Upload Project Guideline
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="guide_title" class="form-label fw-semibold">Document Title</label>
+              <input type="text" id="guide_title" name="title" class="form-control" placeholder="e.g. Final Year Project Manual 2026" required maxlength="128">
+            </div>
+            <div class="mb-3">
+              <label for="guide_desc" class="form-label fw-semibold">Description (Optional)</label>
+              <textarea id="guide_desc" name="description" class="form-control" rows="2" placeholder="Brief outline of contents..."></textarea>
+            </div>
+            <div class="mb-3">
+              <label for="guide_file" class="form-label fw-semibold">Document File</label>
+              <input type="file" id="guide_file" name="file" class="form-control" accept=".pdf,.doc,.docx" required>
+              <div class="form-text">Allowed: PDF, DOC, DOCX. Maximum file size: 10 MB.</div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary btn-sm fw-semibold">Upload & Notify Users</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
