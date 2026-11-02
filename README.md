@@ -2,6 +2,8 @@
 
 A robust, enterprise-grade, monolithic web application built for engineering departments to automate, govern, and evaluate final-year student capstone projects.
 
+📄 **Workflow & Roles Documentation**: See [SPMS_Project_Flow_and_Roles_Guide.pdf](SPMS_Project_Flow_and_Roles_Guide.pdf) for a step-by-step role and state machine guide.
+
 ---
 
 ## 1. System Architecture & Tech Stack
@@ -74,7 +76,8 @@ EXIT;
 
 ### Step 1: Clone and Navigate to Repository
 ```bash
-cd student-project-management-system-python
+git clone https://github.com/kirankumar45-11/student-project-management-system.git
+cd student-project-management-system
 ```
 
 ### Step 2: Create and Activate Virtual Environment
